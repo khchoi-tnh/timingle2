@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  # PostgreSQL - 주요 데이터
+  postgres:
+    image: docker.io/postgres:15-alpine
+    container_name: timingle-postgres
+    environment:
+      POSTGRES_USER: timingle
+      POSTGRES_PASSWORD: timingle_dev_password
+      POSTGRES_DB: timingle
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data:Z
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:Z
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U timingle"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Redis - 캐시 및 세션
+  redis:
+    image: docker.io/redis:7-alpine
+    container_name: timingle-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data:Z
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # NATS - 메시지 큐
+  nats:
+    image: docker.io/nats:2.10-alpine
+    container_name: timingle-nats
+    ports:
+      - "4222:4222"  # Client
+      - "8222:8222"  # HTTP Management
+      - "6222:6222"  # Cluster
+    command: >
+      -js
+      -sd /data
+      -m 8222
+    volumes:
+      - nats_data:/data:Z
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost:8222/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ScyllaDB - 채팅 메시지 및 히스토리 (필수, Discord 수준)
+  scylla:
+    image: docker.io/scylladb/scylla:5.4
+    container_name: timingle-scylla
+    ports:
+      - "9042:9042"  # CQL
+      - "9160:9160"  # Thrift (legacy)
+      - "10000:10000"  # REST API
+    volumes:
+      - scylla_data:/var/lib/scylla:Z
+      - ./scylla/scylla.yaml:/etc/scylla/scylla.yaml:Z
+    command: --smp 2 --memory 2G --overprovisioned 1 --api-address 0.0.0.0
+    healthcheck:
+      test: ["CMD", "cqlsh", "-e", "DESCRIBE KEYSPACES"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  nats_data:
+  scylla_data:
+
+networks:
+  default:
+    name: timingle-network

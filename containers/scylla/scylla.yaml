@@ -1,0 +1,18 @@
+# ScyllaDB Configuration for timingle
+
+cluster_name: 'timingle-cluster'
+listen_address: 0.0.0.0
+rpc_address: 0.0.0.0
+broadcast_rpc_address: localhost
+endpoint_snitch: SimpleSnitch
+
+# Performance tuning for development
+# Production should use different values
+commitlog_sync: periodic
+commitlog_sync_period_in_ms: 10000
+
+# Memory settings (adjusted by --memory flag in compose)
+# memtable_flush_writers: 2
+
+# Compaction settings
+compaction_throughput_mb_per_sec: 16
