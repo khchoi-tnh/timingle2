@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: timingle-config
+  namespace: timingle
+data:
+  # API Configuration
+  API_PORT: "8080"
+  API_ENV: "production"
+
+  # Database
+  POSTGRES_HOST: "postgres-service"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "timingle"
+
+  # Redis
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+
+  # NATS
+  NATS_URL: "nats://nats-service:4222"
+
+  # ScyllaDB
+  SCYLLA_HOST: "scylla-service"
+  SCYLLA_KEYSPACE: "timingle"
+
+  # JWT
+  JWT_EXPIRY: "24h"
+  JWT_REFRESH_EXPIRY: "168h"

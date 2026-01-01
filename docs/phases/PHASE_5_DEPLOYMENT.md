@@ -17,9 +17,9 @@
 ## 📋 사전 준비사항
 
 ### 완료 확인
-- [ ] PHASE_1~4 완료
+- [x] PHASE_1~4 완료 ✅
 - [ ] 모든 테스트 통과
-- [ ] Backend API 안정성 확인
+- [x] Backend API 안정성 확인 ✅
 - [ ] Flutter 앱 빌드 성공 (Android + iOS)
 
 ### 준비물
@@ -28,6 +28,18 @@
 - [ ] Google Play Developer 계정 ($25 일회성)
 - [ ] Apple Developer 계정 ($99/년)
 - [ ] 클라우드 서버 (AWS, GCP, Azure 등)
+
+### 구현 완료 (2026-01-01)
+- [x] GitHub Actions CI/CD 파이프라인 구축 ✅
+  - `.github/workflows/backend-ci.yml` - Backend 빌드/테스트/배포
+  - `.github/workflows/frontend-ci.yml` - Frontend 빌드/테스트
+- [x] Backend Dockerfile 작성 ✅
+  - Multi-stage build (builder → api, worker)
+  - Non-root user, Health check 포함
+- [x] Kubernetes 매니페스트 ✅
+  - `k8s/base/` - 기본 리소스 (namespace, configmap, secret, deployments)
+  - `k8s/overlays/production/` - 프로덕션 오버레이
+  - Kustomize 기반 구성
 
 ---
 

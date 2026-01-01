@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: timingle
+
+resources:
+  - ../../base
+
+# Production-specific patches
+patchesStrategicMerge:
+  - api-deployment-patch.yaml
+
+# Production images
+images:
+  - name: ghcr.io/yourusername/timingle2/backend
+    newTag: production
+
+# Production labels
+commonLabels:
+  environment: production

@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: timingle-worker
+  namespace: timingle
+  labels:
+    app: timingle-worker
+    app.kubernetes.io/name: timingle-worker
+    app.kubernetes.io/component: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: timingle-worker
+  template:
+    metadata:
+      labels:
+        app: timingle-worker
+    spec:
+      containers:
+        - name: worker
+          image: ghcr.io/yourusername/timingle2/backend:latest
+          imagePullPolicy: Always
+          command: ["/usr/local/bin/worker"]
+          envFrom:
+            - configMapRef:
+                name: timingle-config
+            - secretRef:
+                name: timingle-secrets
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "256Mi"
+      restartPolicy: Always
