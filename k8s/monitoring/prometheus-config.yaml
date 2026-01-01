@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: timingle
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+
+    alerting:
+      alertmanagers:
+        - static_configs:
+            - targets: []
+
+    rule_files: []
+
+    scrape_configs:
+      # Prometheus self-monitoring
+      - job_name: 'prometheus'
+        static_configs:
+          - targets: ['localhost:9090']
+
+      # timingle API metrics
+      - job_name: 'timingle-api'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - timingle
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            regex: timingle-api
+            action: keep
+          - source_labels: [__meta_kubernetes_pod_container_port_number]
+            regex: '9090'
+            action: keep
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+
+      # timingle Worker metrics
+      - job_name: 'timingle-worker'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - timingle
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            regex: timingle-worker
+            action: keep
+
+      # Node metrics (if node-exporter is installed)
+      - job_name: 'kubernetes-nodes'
+        kubernetes_sd_configs:
+          - role: node
+        relabel_configs:
+          - action: labelmap
+            regex: __meta_kubernetes_node_label_(.+)

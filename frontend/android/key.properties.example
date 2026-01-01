@@ -1,0 +1,14 @@
+# ===========================================
+# Android Release Signing Configuration
+# ===========================================
+# Copy this file to key.properties and fill in your values
+# NEVER commit key.properties to version control!
+#
+# To generate a keystore:
+# keytool -genkey -v -keystore ~/timingle-release.jks \
+#   -keyalg RSA -keysize 2048 -validity 10000 -alias timingle
+
+storePassword=YOUR_KEYSTORE_PASSWORD
+keyPassword=YOUR_KEY_PASSWORD
+keyAlias=timingle
+storeFile=/path/to/your/timingle-release.jks
