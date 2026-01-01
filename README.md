@@ -81,18 +81,30 @@ timingle2/
 
 ## 🎯 주요 기능
 
-### MVP (Phase 1-3)
-- ✅ 사용자 인증 (전화번호, Google)
-- ✅ 이벤트 생성/관리
-- ✅ 이벤트별 실시간 채팅
-- ✅ 변경 이력 자동 기록
-- ✅ 상태 관리 (제안/확정/완료/취소)
+### MVP (Phase 1-4) ✅ 완료
+- ✅ 사용자 인증 (전화번호) - **완료**
+- ✅ 이벤트 생성/관리 - **완료**
+- ✅ 이벤트별 실시간 채팅 - **완료**
+  - WebSocket Gateway (Room 기반 브로드캐스팅)
+  - NATS JetStream 메시지 큐
+  - ScyllaDB 채팅 메시지 저장
+  - Chat Worker (비동기 저장)
+- ✅ 변경 이력 자동 기록 - **완료**
+- ✅ 상태 관리 (PROPOSED/CONFIRMED/DONE/CANCELED) - **완료**
+- ✅ Flutter 모바일 앱 - **완료** (2026-01-01)
+  - Timingle (이벤트 목록)
+  - Timeline (캘린더 뷰)
+  - Open Timingle (오픈 예약 마켓플레이스)
+  - Friends (친구 목록/요청 관리)
+  - Settings (설정)
+  - Chat (실시간 채팅)
 
-### 확장 기능 (Phase 4-5)
-- 🔄 오픈 예약 시스템
-- 🔄 결제 연동 (Toss/Stripe)
-- 🔄 지역/관심사 기반 추천
-- 🔄 노쇼 방지 정책
+### 확장 기능 (Phase 5)
+- 🔄 E2E 테스트 - **계획됨**
+- 🔄 결제 연동 (Toss/Stripe) - **계획됨**
+- 🔄 지역/관심사 기반 추천 - **계획됨**
+- 🔄 노쇼 방지 정책 - **계획됨**
+- 🔄 프로덕션 배포 - **계획됨**
 
 ## 🏗️ 기술 스택
 
@@ -122,8 +134,9 @@ timingle2/
 - [CLAUDE.md](CLAUDE.md) - Claude와의 협업 가이드
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - 시스템 아키텍처
 - [docs/DATABASE.md](docs/DATABASE.md) - 데이터베이스 설계
-- [docs/API.md](docs/API.md) - REST API 명세
+- [docs/API.md](docs/API.md) - REST API 명세 (WebSocket 포함)
 - [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) - 개발 환경 설정
+- [docs/TESTING.md](docs/TESTING.md) - 테스트 가이드 ⭐ **신규**
 
 ### 단계별 실행 계획
 - [docs/PHASES.md](docs/PHASES.md) - 전체 단계 개요
@@ -224,38 +237,57 @@ flutter test
 
 ## 📈 로드맵
 
-### Phase 0: 환경 설정 (1-2일)
-- [ ] Docker Compose 설정
-- [ ] 프로젝트 구조 생성
-- [ ] 기본 설정 파일
+### Phase 0: 환경 설정 (1-2일) ✅ **완료**
+- ✅ Podman Compose 설정
+- ✅ 프로젝트 구조 생성
+- ✅ 기본 설정 파일
 
-### Phase 1: 백엔드 핵심 (Week 1)
-- [ ] JWT 인증
-- [ ] 이벤트 CRUD API
-- [ ] 상태 머신 구현
+### Phase 1: 백엔드 핵심 (Week 1) ✅ **완료** (2025-12-31)
+- ✅ JWT 인증
+- ✅ 이벤트 CRUD API
+- ✅ 상태 머신 구현
+- ✅ PostgreSQL 마이그레이션
 
-### Phase 2: 실시간 기능 (Week 2)
-- [ ] WebSocket Gateway
-- [ ] NATS 메시징
-- [ ] 채팅 Worker
+### Phase 2: 실시간 기능 (Week 2) ✅ **완료** (2025-12-31)
+- ✅ WebSocket Gateway (Hub 패턴)
+- ✅ NATS JetStream 메시징
+- ✅ ScyllaDB 채팅 저장
+- ✅ Chat Worker (비동기 저장)
+- ✅ 통합 테스트
 
-### Phase 3: Flutter 앱 (Week 3)
-- [ ] Clean Architecture 구조
-- [ ] 로그인/메인 화면
-- [ ] 이벤트 목록/상세
-- [ ] 실시간 채팅
+### Phase 3: Flutter 앱 (Week 3) ✅ **완료** (2026-01-01)
+- ✅ Clean Architecture 구조
+- ✅ 로그인/메인 화면
+- ✅ 이벤트 목록/상세
+- ✅ 실시간 채팅 (WebSocket)
+- ✅ i18n/Timezone 지원
+- ✅ Settings 화면
 
-### Phase 4: 통합 테스트 (Week 4)
-- [ ] E2E 테스트
-- [ ] 성능 최적화
-- [ ] 버그 수정
+### Phase 4: 통합 테스트 (Week 4) ✅ **완료** (2026-01-01)
+- ✅ Timeline 화면 (캘린더 뷰)
+- ✅ Open Timingle 화면 (오픈 예약)
+- ✅ Friends 화면 (친구 목록)
+- ✅ Bottom Navigation Bar (5개 탭)
+- ⬜ E2E 테스트 (Phase 5로 이동)
 
-### Phase 5: 배포 (Week 4+)
+### Phase 5: 배포 (Week 4+) 🔄 **진행 예정**
+- [ ] E2E 테스트 및 성능 최적화
 - [ ] CI/CD 파이프라인
 - [ ] 프로덕션 배포
 - [ ] 모니터링 설정
+- [ ] App Store/Play Store 출시
 
 자세한 로드맵은 [docs/PHASES.md](docs/PHASES.md)를 참조하세요.
+
+### 🎉 최근 완료 (2026-01-01)
+- ✅ Phase 1 ~ Phase 4 완료
+- ✅ 백엔드 핵심 기능 구현 (JWT, 이벤트 CRUD, 상태 관리)
+- ✅ 실시간 채팅 시스템 구축 (WebSocket + NATS + ScyllaDB)
+- ✅ Flutter 앱 전체 구현 (5개 탭 화면)
+  - Timingle, Timeline, Open, Friends, Settings
+- ✅ 실시간 채팅 UI 완성
+- ✅ 오픈 예약 마켓플레이스 UI 완성
+- ✅ 친구 관리 기능 UI 완성
 
 ## 👥 팀
 

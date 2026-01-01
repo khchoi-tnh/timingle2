@@ -7,9 +7,10 @@
 3. [사용자 관리](#사용자-관리)
 4. [이벤트 관리](#이벤트-관리)
 5. [오픈 예약](#오픈-예약)
-6. [채팅](#채팅)
-7. [결제](#결제)
-8. [에러 코드](#에러-코드)
+6. [친구 관리](#친구-관리)
+7. [채팅](#채팅)
+8. [결제](#결제)
+9. [에러 코드](#에러-코드)
 
 ---
 
@@ -708,51 +709,222 @@ Authorization: Bearer {access_token}
 
 ---
 
-## 채팅
+## 친구 관리
 
-### 1. 채팅 메시지 목록 조회
+### 1. 친구 목록 조회
 ```http
-GET /events/{event_id}/messages?limit=50&before={message_id}
+GET /friends?page=1&limit=20
 Authorization: Bearer {access_token}
 ```
 
 **Query Parameters**:
-- `limit`: 메시지 개수 (기본: 50)
-- `before`: 특정 메시지 ID 이전 (페이지네이션)
+- `page`: 페이지 번호 (기본: 1)
+- `limit`: 페이지당 개수 (기본: 20)
+- `search`: 검색어 (이름, 전화번호)
 
 **Response** (200 OK):
 ```json
 {
   "success": true,
   "data": {
-    "messages": [
+    "friends": [
       {
-        "message_id": "uuid-1234",
-        "event_id": 1,
-        "sender": {
-          "id": 1,
-          "name": "홍길동",
-          "profile_image_url": "https://..."
-        },
-        "message": "안녕하세요!",
-        "metadata": {},
+        "id": 2,
+        "name": "김철수",
+        "phone": "+821098765432",
+        "profile_image_url": "https://...",
+        "status": "ACCEPTED",
+        "last_event_date": "2025-12-31T10:00:00Z",
+        "event_count": 5,
         "created_at": "2025-01-01T10:00:00Z"
-      },
-      {
-        "message_id": "uuid-5678",
-        "event_id": 1,
-        "sender": null,  // 시스템 메시지
-        "message": "김철수님이 참여를 확인했습니다.",
-        "metadata": {
-          "type": "system",
-          "action": "participant_confirmed"
-        },
-        "created_at": "2025-01-01T12:00:00Z"
       }
     ],
-    "has_more": false
+    "pagination": {
+      "current_page": 1,
+      "total_pages": 1,
+      "total_items": 5,
+      "items_per_page": 20
+    }
   }
 }
+```
+
+### 2. 친구 요청 목록 조회
+```http
+GET /friends/requests
+Authorization: Bearer {access_token}
+```
+
+**Response** (200 OK):
+```json
+{
+  "success": true,
+  "data": {
+    "received": [
+      {
+        "id": 10,
+        "name": "이요청",
+        "phone": "+821011112222",
+        "profile_image_url": "https://...",
+        "status": "RECEIVED",
+        "created_at": "2025-12-31T08:00:00Z"
+      }
+    ],
+    "pending": [
+      {
+        "id": 11,
+        "name": "박대기",
+        "phone": "+821033334444",
+        "profile_image_url": "https://...",
+        "status": "PENDING",
+        "created_at": "2025-12-31T06:00:00Z"
+      }
+    ]
+  }
+}
+```
+
+### 3. 친구 요청 보내기
+```http
+POST /friends/request
+Authorization: Bearer {access_token}
+```
+
+**Request Body**:
+```json
+{
+  "phone": "+821098765432"
+}
+```
+
+**Response** (201 Created):
+```json
+{
+  "success": true,
+  "data": {
+    "id": 15,
+    "target_user": {
+      "id": 5,
+      "name": "박친구",
+      "phone": "+821098765432"
+    },
+    "status": "PENDING",
+    "created_at": "2026-01-01T10:00:00Z"
+  },
+  "message": "Friend request sent"
+}
+```
+
+### 4. 친구 요청 수락
+```http
+POST /friends/requests/{request_id}/accept
+Authorization: Bearer {access_token}
+```
+
+**Response** (200 OK):
+```json
+{
+  "success": true,
+  "data": {
+    "friend": {
+      "id": 10,
+      "name": "이요청",
+      "phone": "+821011112222",
+      "status": "ACCEPTED"
+    }
+  },
+  "message": "Friend request accepted"
+}
+```
+
+### 5. 친구 요청 거절
+```http
+POST /friends/requests/{request_id}/reject
+Authorization: Bearer {access_token}
+```
+
+**Response** (200 OK):
+```json
+{
+  "success": true,
+  "message": "Friend request rejected"
+}
+```
+
+### 6. 친구 삭제
+```http
+DELETE /friends/{friend_id}
+Authorization: Bearer {access_token}
+```
+
+**Response** (200 OK):
+```json
+{
+  "success": true,
+  "message": "Friend removed successfully"
+}
+```
+
+### 7. 친구 차단
+```http
+POST /friends/{friend_id}/block
+Authorization: Bearer {access_token}
+```
+
+**Response** (200 OK):
+```json
+{
+  "success": true,
+  "message": "User blocked successfully"
+}
+```
+
+### 8. 친구 차단 해제
+```http
+DELETE /friends/{friend_id}/block
+Authorization: Bearer {access_token}
+```
+
+**Response** (200 OK):
+```json
+{
+  "success": true,
+  "message": "User unblocked successfully"
+}
+```
+
+---
+
+## 채팅
+
+### 1. 채팅 메시지 목록 조회
+```http
+GET /api/v1/events/{event_id}/messages?limit=50
+Authorization: Bearer {access_token}
+```
+
+**Query Parameters**:
+- `limit`: 메시지 개수 (기본: 50)
+
+**Response** (200 OK):
+```json
+[
+  {
+    "event_id": 1,
+    "created_at": "2025-12-31T10:00:00Z",
+    "message_id": "550e8400-e29b-41d4-a716-446655440000",
+    "sender_id": 1,
+    "sender_name": "홍길동",
+    "sender_profile_url": "https://...",
+    "message": "안녕하세요!",
+    "message_type": "text",
+    "attachments": [],
+    "reply_to": null,
+    "edited_at": null,
+    "is_deleted": false,
+    "metadata": {}
+  }
+]
 ```
 
 **Note**: 실시간 메시지 전송은 WebSocket을 사용합니다. 이 API는 히스토리 조회용입니다.
@@ -913,71 +1085,74 @@ Authorization: Bearer {access_token}
 
 ### 연결
 ```
-ws://localhost:8080/ws?token={access_token}
+ws://localhost:8080/api/v1/ws?event_id={event_id}
+Authorization: Bearer {access_token}  // HTTP 헤더로 전달
 ```
+
+**연결 파라미터**:
+- `event_id`: 이벤트 ID (필수)
+
+**인증**:
+- Authorization 헤더에 Bearer 토큰 포함
+- 토큰에서 user_id 추출하여 사용자 인증
 
 ### 메시지 형식
 
 #### 1. 채팅 메시지 전송 (Client → Server)
 ```json
 {
-  "type": "chat.message",
-  "payload": {
-    "event_id": 1,
-    "message": "안녕하세요!"
-  }
+  "type": "message",
+  "message": "안녕하세요!",
+  "reply_to": "550e8400-e29b-41d4-a716-446655440000"
 }
 ```
 
-#### 2. 채팅 메시지 수신 (Server → Client)
+**필드**:
+- `type`: 메시지 타입 ("message", "typing", "system")
+- `message`: 메시지 내용 (필수)
+- `reply_to`: 답장할 메시지 ID (선택)
+
+#### 2. 채팅 메시지 수신 (Server → Client - 브로드캐스트)
 ```json
 {
-  "type": "chat.message",
-  "payload": {
-    "message_id": "uuid-1234",
-    "event_id": 1,
-    "sender": {
-      "id": 1,
-      "name": "홍길동",
-      "profile_image_url": "https://..."
-    },
-    "message": "안녕하세요!",
-    "created_at": "2025-01-01T10:00:00Z"
-  }
+  "event_id": 1,
+  "created_at": "2025-12-31T10:00:00Z",
+  "message_id": "550e8400-e29b-41d4-a716-446655440000",
+  "sender_id": 1,
+  "sender_name": "홍길동",
+  "sender_profile_url": "https://...",
+  "message": "안녕하세요!",
+  "message_type": "text",
+  "attachments": [],
+  "reply_to": null,
+  "edited_at": null,
+  "is_deleted": false,
+  "metadata": {}
 }
 ```
 
-#### 3. 이벤트 업데이트 알림 (Server → Client)
-```json
-{
-  "type": "event.updated",
-  "payload": {
-    "event_id": 1,
-    "change_type": "CONFIRMED",
-    "actor": {
-      "id": 2,
-      "name": "김철수"
-    },
-    "updated_at": "2025-01-01T12:00:00Z"
-  }
-}
-```
+#### 3. Ping/Pong (연결 유지)
+- Ping: 서버 → 클라이언트 (54초마다)
+- Pong: 클라이언트 → 서버 (응답)
+- Read Deadline: 60초
+- Write Timeout: 10초
 
-#### 4. Ping/Pong (연결 유지)
-```json
-// Client → Server
-{
-  "type": "ping"
-}
+### 연결 관리
 
-// Server → Client
-{
-  "type": "pong",
-  "payload": {
-    "timestamp": "2025-01-01T10:00:00Z"
-  }
-}
-```
+**Room 기반 브로드캐스팅**:
+- 각 이벤트마다 독립적인 채팅방
+- 같은 event_id로 연결한 모든 클라이언트에게 메시지 브로드캐스트
+
+**메시지 흐름**:
+1. 클라이언트 → WebSocket Gateway (메시지 전송)
+2. Gateway → NATS JetStream (메시지 발행: `chat.message.{event_id}`)
+3. Gateway → 같은 이벤트의 모든 클라이언트 (즉시 브로드캐스트)
+4. Chat Worker ← NATS JetStream (메시지 구독)
+5. Chat Worker → ScyllaDB (메시지 영구 저장)
+
+**재연결**:
+- 연결 끊김 시 자동 재연결
+- 마지막 메시지 이후 데이터는 REST API로 조회
 
 ---
 

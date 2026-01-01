@@ -250,6 +250,60 @@ cat docs/phases/PHASE_0_SETUP.md
 
 ---
 
+## 🔧 문제 해결 및 Troubleshooting
+
+### ⚠️ 중요: 문제 발견 시 반드시 문서화!
+
+**문제를 발견하고 해결했다면, 반드시 Troubleshooting 문서에 기록해주세요!**
+
+### Troubleshooting 가이드
+
+문제가 발생하면 다음 순서로 확인하세요:
+
+1. **[docs/troubleshooting/README.md](docs/troubleshooting/README.md)** - 전체 가이드
+2. **카테고리별 문서**:
+   - [ScyllaDB 문제](docs/troubleshooting/scylladb.md)
+   - [Podman 문제](docs/troubleshooting/podman.md)
+   - [PostgreSQL 문제](docs/troubleshooting/postgresql.md)
+   - [Go 문제](docs/troubleshooting/go.md)
+
+### 문제 해결 후 문서화 절차
+
+1. **문제 재현 확인**: 다시 발생할 수 있는지 확인
+2. **해결 방법 정리**: 단계별로 명확하게 작성
+3. **해당 카테고리 파일 수정**:
+   ```bash
+   # 예: ScyllaDB 문제 해결 시
+   vim docs/troubleshooting/scylladb.md
+   ```
+4. **문서 포맷**:
+   ```markdown
+   ## ❌ 문제 X: [간단한 제목]
+
+   ### 증상
+   [에러 메시지 또는 현상]
+
+   ### 원인
+   [왜 발생했는지]
+
+   ### 해결 방법
+   [단계별 해결 방법]
+
+   ### 예방
+   [다시 발생하지 않도록]
+   ```
+
+### 왜 문서화가 중요한가?
+
+- ✅ 같은 문제를 두 번 겪지 않음
+- ✅ 팀원들이 빠르게 문제 해결 가능
+- ✅ 프로젝트 지식 축적
+- ✅ 나중에 참고할 수 있는 자료
+
+**Claude도 이 문서를 참조하여 더 나은 도움을 제공할 수 있습니다!**
+
+---
+
 ## 🎯 현재 상태 및 다음 단계
 
 ### 현재 완료

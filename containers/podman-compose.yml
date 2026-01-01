@@ -68,14 +68,13 @@ services:
       - "10000:10000"  # REST API
     volumes:
       - scylla_data:/var/lib/scylla:Z
-      - ./scylla/scylla.yaml:/etc/scylla/scylla.yaml:Z
-    command: --smp 2 --memory 2G --overprovisioned 1 --api-address 0.0.0.0
+    command: --smp 1 --memory 1G --overprovisioned 1 --api-address 0.0.0.0 --developer-mode 1
     healthcheck:
       test: ["CMD", "cqlsh", "-e", "DESCRIBE KEYSPACES"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 60s
+      start_period: 90s
     restart: unless-stopped
 
 volumes:

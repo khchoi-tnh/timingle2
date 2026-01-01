@@ -1,0 +1,84 @@
+{
+  "app_name": "timingle",
+  "app_tagline": "약속이 대화가 되는 앱",
+
+  "common": {
+    "loading": "로딩 중...",
+    "error": "오류가 발생했습니다",
+    "retry": "다시 시도",
+    "cancel": "취소",
+    "confirm": "확인",
+    "save": "저장",
+    "delete": "삭제",
+    "edit": "수정"
+  },
+
+  "auth": {
+    "login": "로그인",
+    "logout": "로그아웃",
+    "phone_label": "전화번호",
+    "phone_hint": "01012345678",
+    "name_label": "이름",
+    "name_hint": "홍길동"
+  },
+
+  "event": {
+    "title": "약속",
+    "no_events": "아직 약속이 없어요",
+    "create_event": "새 약속 만들기",
+    "event_title": "약속 제목",
+    "location": "장소",
+    "participants": "참여자",
+    "status": {
+      "proposed": "미확정",
+      "confirmed": "확정",
+      "canceled": "취소됨",
+      "done": "완료"
+    }
+  },
+
+  "chat": {
+    "title": "채팅",
+    "no_messages": "아직 메시지가 없어요",
+    "first_message": "첫 메시지를 보내보세요!",
+    "message_hint": "메시지 입력...",
+    "send": "전송",
+    "send_failed": "메시지 전송에 실패했습니다",
+    "connection": {
+      "connected": "연결됨",
+      "connecting": "연결 중...",
+      "disconnected": "연결 끊김"
+    }
+  },
+
+  "settings": {
+    "title": "설정",
+    "profile_edit": "프로필 편집",
+    "notifications": {
+      "title": "알림",
+      "settings": "알림 설정",
+      "dnd": "방해 금지 모드"
+    },
+    "app": {
+      "title": "앱 설정",
+      "language": "언어",
+      "dark_mode": "다크 모드",
+      "timezone": "시간대"
+    },
+    "support": {
+      "title": "정보 및 지원",
+      "about": "앱 정보",
+      "help": "도움말",
+      "feedback": "피드백 보내기",
+      "terms": "이용약관",
+      "privacy": "개인정보 처리방침"
+    },
+    "account": {
+      "title": "계정",
+      "logout": "로그아웃",
+      "logout_confirm": "정말 로그아웃 하시겠습니까?",
+      "delete": "계정 삭제",
+      "delete_confirm": "계정을 삭제하면 모든 데이터가 영구적으로 삭제됩니다.\n정말 삭제하시겠습니까?"
+    }
+  }
+}
