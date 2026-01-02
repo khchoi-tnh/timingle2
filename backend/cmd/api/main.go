@@ -76,11 +76,12 @@ func main() {
 	// Initialize services
 	authService := services.NewAuthService(userRepo, authRepo, jwtManager)
 	eventService := services.NewEventService(eventRepo, userRepo)
+	chatService := services.NewChatService(chatRepo, userRepo, eventService, hub, natsClient.JS)
 
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(authService)
 	eventHandler := handlers.NewEventHandler(eventService)
-	wsHandler := handlers.NewWebSocketHandler(hub, natsClient.JS, chatRepo, userRepo)
+	wsHandler := handlers.NewWebSocketHandler(hub, chatService)
 
 	// Setup router
 	router := gin.Default()

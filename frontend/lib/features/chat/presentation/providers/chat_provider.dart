@@ -9,6 +9,10 @@ import '../../data/datasources/chat_remote_datasource.dart';
 import '../../data/repositories/chat_repository_impl.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../domain/repositories/chat_repository.dart';
+import '../../domain/usecases/connect_chat.dart';
+import '../../domain/usecases/disconnect_chat.dart';
+import '../../domain/usecases/get_messages.dart';
+import '../../domain/usecases/send_message.dart';
 
 /// 채팅 상태
 class ChatState {
@@ -63,13 +67,47 @@ final chatRepositoryProvider = Provider<ChatRepository>((ref) {
   );
 });
 
+/// UseCase Providers
+final getMessagesUseCaseProvider = Provider<GetMessages>((ref) {
+  return GetMessages(ref.watch(chatRepositoryProvider));
+});
+
+final connectChatUseCaseProvider = Provider<ConnectChat>((ref) {
+  return ConnectChat(ref.watch(chatRepositoryProvider));
+});
+
+final disconnectChatUseCaseProvider = Provider<DisconnectChat>((ref) {
+  return DisconnectChat(ref.watch(chatRepositoryProvider));
+});
+
+final sendMessageUseCaseProvider = Provider<SendMessage>((ref) {
+  return SendMessage(ref.watch(chatRepositoryProvider));
+});
+
 /// Chat StateNotifier
 class ChatNotifier extends StateNotifier<ChatState> {
+  final GetMessages _getMessages;
+  final ConnectChat _connectChat;
+  final DisconnectChat _disconnectChat;
+  final SendMessage _sendMessage;
   final ChatRepository _repository;
   final int? _currentUserId;
   StreamSubscription<ChatMessage>? _messageSubscription;
 
-  ChatNotifier(this._repository, this._currentUserId) : super(const ChatState()) {
+  ChatNotifier({
+    required GetMessages getMessages,
+    required ConnectChat connectChat,
+    required DisconnectChat disconnectChat,
+    required SendMessage sendMessage,
+    required ChatRepository repository,
+    int? currentUserId,
+  })  : _getMessages = getMessages,
+        _connectChat = connectChat,
+        _disconnectChat = disconnectChat,
+        _sendMessage = sendMessage,
+        _repository = repository,
+        _currentUserId = currentUserId,
+        super(const ChatState()) {
     _listenToMessages();
   }
 
@@ -93,7 +131,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
     );
 
     // 1. 기존 메시지 로드
-    final messagesResult = await _repository.getMessages(eventId);
+    final messagesResult = await _getMessages(
+      GetMessagesParams(eventId: eventId),
+    );
     messagesResult.fold(
       (failure) {
         state = state.copyWith(
@@ -110,7 +150,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
     );
 
     // 2. WebSocket 연결
-    final connectResult = await _repository.connect(eventId);
+    final connectResult = await _connectChat(
+      ConnectChatParams(eventId: eventId),
+    );
     connectResult.fold(
       (failure) {
         state = state.copyWith(
@@ -130,7 +172,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   /// 채팅방 퇴장
   Future<void> leaveChat() async {
-    await _repository.disconnect();
+    await _disconnectChat();
     state = const ChatState();
   }
 
@@ -138,9 +180,11 @@ class ChatNotifier extends StateNotifier<ChatState> {
   Future<bool> sendMessage(String message, {String? replyTo}) async {
     if (message.trim().isEmpty) return false;
 
-    final result = await _repository.sendMessage(
-      message.trim(),
-      replyTo: replyTo,
+    final result = await _sendMessage(
+      SendMessageParams(
+        message: message.trim(),
+        replyTo: replyTo,
+      ),
     );
 
     return result.fold(
@@ -169,7 +213,13 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
 /// Chat StateNotifier Provider
 final chatProvider = StateNotifierProvider<ChatNotifier, ChatState>((ref) {
-  final repository = ref.watch(chatRepositoryProvider);
   final currentUser = ref.watch(currentUserProvider);
-  return ChatNotifier(repository, currentUser?.id);
+  return ChatNotifier(
+    getMessages: ref.watch(getMessagesUseCaseProvider),
+    connectChat: ref.watch(connectChatUseCaseProvider),
+    disconnectChat: ref.watch(disconnectChatUseCaseProvider),
+    sendMessage: ref.watch(sendMessageUseCaseProvider),
+    repository: ref.watch(chatRepositoryProvider),
+    currentUserId: currentUser?.id,
+  );
 });

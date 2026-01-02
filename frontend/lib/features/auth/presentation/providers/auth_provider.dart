@@ -7,6 +7,10 @@ import '../../data/datasources/auth_remote_datasource.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/repositories/auth_repository.dart';
+import '../../domain/usecases/get_current_user.dart';
+import '../../domain/usecases/logout.dart';
+import '../../domain/usecases/register_with_phone.dart';
+import '../../domain/usecases/try_auto_login.dart';
 
 /// 인증 상태
 enum AuthStatus {
@@ -66,17 +70,46 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
   );
 });
 
+/// UseCase Providers
+final registerWithPhoneUseCaseProvider = Provider<RegisterWithPhone>((ref) {
+  return RegisterWithPhone(ref.watch(authRepositoryProvider));
+});
+
+final logoutUseCaseProvider = Provider<Logout>((ref) {
+  return Logout(ref.watch(authRepositoryProvider));
+});
+
+final getCurrentUserUseCaseProvider = Provider<GetCurrentUser>((ref) {
+  return GetCurrentUser(ref.watch(authRepositoryProvider));
+});
+
+final tryAutoLoginUseCaseProvider = Provider<TryAutoLogin>((ref) {
+  return TryAutoLogin(ref.watch(authRepositoryProvider));
+});
+
 /// Auth StateNotifier
 class AuthNotifier extends StateNotifier<AuthState> {
-  final AuthRepository _repository;
+  final RegisterWithPhone _registerWithPhone;
+  final Logout _logout;
+  final GetCurrentUser _getCurrentUser;
+  final TryAutoLogin _tryAutoLogin;
 
-  AuthNotifier(this._repository) : super(const AuthState());
+  AuthNotifier({
+    required RegisterWithPhone registerWithPhone,
+    required Logout logout,
+    required GetCurrentUser getCurrentUser,
+    required TryAutoLogin tryAutoLogin,
+  })  : _registerWithPhone = registerWithPhone,
+        _logout = logout,
+        _getCurrentUser = getCurrentUser,
+        _tryAutoLogin = tryAutoLogin,
+        super(const AuthState());
 
   /// 자동 로그인 시도
   Future<void> tryAutoLogin() async {
     state = state.copyWith(status: AuthStatus.loading);
 
-    final result = await _repository.tryAutoLogin();
+    final result = await _tryAutoLogin();
 
     result.fold(
       (failure) {
@@ -102,9 +135,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }) async {
     state = state.copyWith(status: AuthStatus.loading);
 
-    final result = await _repository.registerWithPhone(
-      phone: phone,
-      name: name,
+    final result = await _registerWithPhone(
+      RegisterWithPhoneParams(phone: phone, name: name),
     );
 
     return result.fold(
@@ -131,14 +163,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> logout() async {
     state = state.copyWith(status: AuthStatus.loading);
 
-    await _repository.logout();
+    await _logout();
 
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
 
   /// 현재 사용자 정보 새로고침
   Future<void> refreshCurrentUser() async {
-    final result = await _repository.getCurrentUser();
+    final result = await _getCurrentUser();
 
     result.fold(
       (failure) {
@@ -158,8 +190,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
 /// Auth StateNotifier Provider
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
-  final repository = ref.watch(authRepositoryProvider);
-  return AuthNotifier(repository);
+  return AuthNotifier(
+    registerWithPhone: ref.watch(registerWithPhoneUseCaseProvider),
+    logout: ref.watch(logoutUseCaseProvider),
+    getCurrentUser: ref.watch(getCurrentUserUseCaseProvider),
+    tryAutoLogin: ref.watch(tryAutoLoginUseCaseProvider),
+  );
 });
 
 /// 현재 사용자 Provider (편의용)

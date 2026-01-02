@@ -313,3 +313,16 @@ func (r *EventRepository) FindParticipants(eventID int64) ([]int64, error) {
 
 	return userIDs, nil
 }
+
+// IsUserParticipant checks if a user is a participant of an event
+func (r *EventRepository) IsUserParticipant(eventID, userID int64) (bool, error) {
+	query := `SELECT EXISTS(SELECT 1 FROM event_participants WHERE event_id = $1 AND user_id = $2)`
+
+	var exists bool
+	err := r.db.QueryRow(query, eventID, userID).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("failed to check participant: %w", err)
+	}
+
+	return exists, nil
+}

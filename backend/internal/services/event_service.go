@@ -331,3 +331,25 @@ func (s *EventService) MarkEventDone(eventID, userID int64) error {
 	event.Status = status
 	return s.eventRepo.Update(event)
 }
+
+// IsUserEventMember checks if a user is a member (creator or participant) of an event
+func (s *EventService) IsUserEventMember(eventID, userID int64) (bool, error) {
+	// Get event to check creator
+	event, err := s.eventRepo.FindByID(eventID)
+	if err != nil {
+		return false, fmt.Errorf("event not found: %w", err)
+	}
+
+	// Check if user is the creator
+	if event.CreatorID == userID {
+		return true, nil
+	}
+
+	// Check if user is a participant
+	isParticipant, err := s.eventRepo.IsUserParticipant(eventID, userID)
+	if err != nil {
+		return false, fmt.Errorf("failed to check participant: %w", err)
+	}
+
+	return isParticipant, nil
+}
