@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/widgets/widgets.dart';
 import '../providers/auth_provider.dart';
 
 /// 로그인 페이지
@@ -109,43 +110,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 const SizedBox(height: 48),
 
                 // 전화번호 입력
-                TextFormField(
+                AppTextField(
                   controller: _phoneController,
+                  labelText: '전화번호',
+                  hintText: '01012345678',
+                  prefixIcon: Icons.phone_outlined,
                   keyboardType: TextInputType.phone,
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly,
                     LengthLimitingTextInputFormatter(11),
                   ],
-                  decoration: InputDecoration(
-                    labelText: '전화번호',
-                    hintText: '01012345678',
-                    prefixIcon: const Icon(Icons.phone_outlined),
-                    filled: true,
-                    fillColor: AppColors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: AppColors.grayLight,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: AppColors.primaryBlue,
-                        width: 2,
-                      ),
-                    ),
-                    errorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: AppColors.errorRed,
-                      ),
-                    ),
-                  ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return '전화번호를 입력해주세요';
@@ -160,39 +134,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 const SizedBox(height: 16),
 
                 // 이름 입력
-                TextFormField(
+                AppTextField(
                   controller: _nameController,
+                  labelText: '이름',
+                  hintText: '홍길동',
+                  prefixIcon: Icons.person_outline,
                   textCapitalization: TextCapitalization.words,
-                  decoration: InputDecoration(
-                    labelText: '이름',
-                    hintText: '홍길동',
-                    prefixIcon: const Icon(Icons.person_outline),
-                    filled: true,
-                    fillColor: AppColors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: AppColors.grayLight,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: AppColors.primaryBlue,
-                        width: 2,
-                      ),
-                    ),
-                    errorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: AppColors.errorRed,
-                      ),
-                    ),
-                  ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return '이름을 입력해주세요';
@@ -207,35 +154,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 const SizedBox(height: 32),
 
                 // 로그인 버튼
-                SizedBox(
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _handleLogin,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryBlue,
-                      foregroundColor: AppColors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: _isLoading
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              color: AppColors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : const Text(
-                            '시작하기',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                  ),
+                AppButton.primary(
+                  text: '시작하기',
+                  onPressed: _handleLogin,
+                  isLoading: _isLoading,
+                  size: AppButtonSize.large,
                 ),
 
                 const SizedBox(height: 24),

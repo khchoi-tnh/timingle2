@@ -4,6 +4,7 @@ import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/websocket_client.dart';
+import '../../../../core/utils/repository_helper.dart';
 import '../../../../core/utils/token_storage.dart';
 import '../../domain/entities/auth_tokens.dart';
 import '../../domain/entities/user.dart';
@@ -40,17 +41,7 @@ class AuthRepositoryImpl implements AuthRepository {
       );
 
       // 토큰 저장
-      await _tokenStorage.saveTokens(
-        accessToken: accessToken,
-        refreshToken: refreshToken,
-      );
-      await _tokenStorage.saveUserId(user.id);
-      await _tokenStorage.saveUserPhone(user.phone);
-      await _tokenStorage.saveUserName(user.name);
-
-      // API 클라이언트에 토큰 설정
-      _apiClient.setAccessToken(accessToken);
-      _wsClient.setAccessToken(accessToken);
+      await _saveAuthState(user, accessToken, refreshToken);
 
       final tokens = AuthTokens(
         accessToken: accessToken,
@@ -75,28 +66,27 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<Either<Failure, String>> refreshToken(String refreshToken) async {
-    try {
-      final newAccessToken =
-          await _remoteDataSource.refreshToken(refreshToken);
+    return RepositoryHelper.executeWithCustomHandler(
+      () async {
+        final newAccessToken =
+            await _remoteDataSource.refreshToken(refreshToken);
 
-      // 새 토큰 저장
-      await _tokenStorage.saveAccessToken(newAccessToken);
-      _apiClient.setAccessToken(newAccessToken);
-      _wsClient.setAccessToken(newAccessToken);
+        // 새 토큰 저장
+        await _tokenStorage.saveAccessToken(newAccessToken);
+        _apiClient.setAccessToken(newAccessToken);
+        _wsClient.setAccessToken(newAccessToken);
 
-      return Right(newAccessToken);
-    } on AuthException catch (e) {
-      // 토큰 갱신 실패 시 저장된 토큰 삭제
-      await _tokenStorage.clearAll();
-      _apiClient.setAccessToken(null);
-      _wsClient.setAccessToken(null);
-
-      return Left(TokenExpiredFailure(message: e.message, code: e.code));
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(message: e.message));
-    } catch (e) {
-      return Left(UnknownFailure(message: e.toString()));
-    }
+        return newAccessToken;
+      },
+      onError: (e) {
+        if (e is AuthException) {
+          // 토큰 갱신 실패 시 저장된 토큰 삭제
+          _clearAuthState();
+          return TokenExpiredFailure(message: e.message, code: e.code);
+        }
+        return null; // 기본 핸들러 사용
+      },
+    );
   }
 
   @override
@@ -108,32 +98,17 @@ class AuthRepositoryImpl implements AuthRepository {
     }
 
     // 로컬 정리
-    await _tokenStorage.clearAll();
-    _apiClient.setAccessToken(null);
-    _wsClient.setAccessToken(null);
+    await _clearAuthState();
     await _wsClient.disconnect();
 
     return const Right(null);
   }
 
   @override
-  Future<Either<Failure, User>> getCurrentUser() async {
-    try {
-      final user = await _remoteDataSource.getCurrentUser();
-      return Right(user);
-    } on ServerException catch (e) {
-      return Left(ServerFailure(
-        message: e.message,
-        code: e.code,
-        statusCode: e.statusCode,
-      ));
-    } on AuthException catch (e) {
-      return Left(AuthFailure(message: e.message, code: e.code));
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(message: e.message));
-    } catch (e) {
-      return Left(UnknownFailure(message: e.toString()));
-    }
+  Future<Either<Failure, User>> getCurrentUser() {
+    return RepositoryHelper.execute(
+      () => _remoteDataSource.getCurrentUser(),
+    );
   }
 
   @override
@@ -179,5 +154,30 @@ class AuthRepositoryImpl implements AuthRepository {
     } catch (e) {
       return Left(UnknownFailure(message: e.toString()));
     }
+  }
+
+  /// 인증 상태 저장
+  Future<void> _saveAuthState(
+    User user,
+    String accessToken,
+    String refreshToken,
+  ) async {
+    await _tokenStorage.saveTokens(
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+    );
+    await _tokenStorage.saveUserId(user.id);
+    await _tokenStorage.saveUserPhone(user.phone);
+    await _tokenStorage.saveUserName(user.name);
+
+    _apiClient.setAccessToken(accessToken);
+    _wsClient.setAccessToken(accessToken);
+  }
+
+  /// 인증 상태 초기화
+  Future<void> _clearAuthState() async {
+    await _tokenStorage.clearAll();
+    _apiClient.setAccessToken(null);
+    _wsClient.setAccessToken(null);
   }
 }

@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:dartz/dartz.dart';
 
-import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/network/websocket_client.dart';
+import '../../../../core/utils/repository_helper.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../domain/repositories/chat_repository.dart';
 import '../datasources/chat_remote_datasource.dart';
@@ -43,26 +43,10 @@ class ChatRepositoryImpl implements ChatRepository {
   Future<Either<Failure, List<ChatMessage>>> getMessages(
     int eventId, {
     int limit = 50,
-  }) async {
-    try {
-      final messages = await _remoteDataSource.getMessages(
-        eventId,
-        limit: limit,
-      );
-      return Right(messages);
-    } on ServerException catch (e) {
-      return Left(ServerFailure(
-        message: e.message,
-        code: e.code,
-        statusCode: e.statusCode,
-      ));
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(message: e.message));
-    } on AuthException catch (e) {
-      return Left(AuthFailure(message: e.message, code: e.code));
-    } catch (e) {
-      return Left(UnknownFailure(message: e.toString()));
-    }
+  }) {
+    return RepositoryHelper.execute(
+      () => _remoteDataSource.getMessages(eventId, limit: limit),
+    );
   }
 
   @override
@@ -71,21 +55,16 @@ class ChatRepositoryImpl implements ChatRepository {
       await _wsClient.connect(eventId);
       _listenToWebSocket();
       return const Right(null);
-    } on WebSocketException catch (e) {
-      return Left(WebSocketFailure(message: e.message));
     } catch (e) {
-      return Left(UnknownFailure(message: e.toString()));
+      return Left(WebSocketFailure(message: e.toString()));
     }
   }
 
   @override
-  Future<Either<Failure, void>> disconnect() async {
-    try {
-      await _wsClient.disconnect();
-      return const Right(null);
-    } catch (e) {
-      return Left(UnknownFailure(message: e.toString()));
-    }
+  Future<Either<Failure, void>> disconnect() {
+    return RepositoryHelper.executeVoid(
+      () => _wsClient.disconnect(),
+    );
   }
 
   @override
@@ -93,14 +72,10 @@ class ChatRepositoryImpl implements ChatRepository {
     String message, {
     String? replyTo,
   }) async {
-    try {
-      _wsClient.sendMessage(message, replyTo: replyTo);
-      return const Right(null);
-    } on WebSocketException catch (e) {
-      return Left(WebSocketFailure(message: e.message));
-    } catch (e) {
-      return Left(UnknownFailure(message: e.toString()));
-    }
+    final result = RepositoryHelper.executeSync(
+      () => _wsClient.sendMessage(message, replyTo: replyTo),
+    );
+    return Future.value(result);
   }
 
   @override
