@@ -398,10 +398,11 @@ class _FriendsPageState extends ConsumerState<FriendsPage>
               final phone = phoneController.text.trim();
               if (phone.isNotEmpty) {
                 Navigator.pop(context);
+                final messenger = ScaffoldMessenger.of(context);
                 final success =
                     await ref.read(friendsProvider.notifier).sendRequest(phone);
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  messenger.showSnackBar(
                     SnackBar(
                       content: Text(success ? '친구 요청을 보냈어요!' : '요청에 실패했어요'),
                     ),
@@ -590,11 +591,12 @@ class _FriendsPageState extends ConsumerState<FriendsPage>
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
+              final messenger = ScaffoldMessenger.of(context);
               final success = await ref
                   .read(friendsProvider.notifier)
                   .removeFriend(friend.id);
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
+                messenger.showSnackBar(
                   SnackBar(
                     content: Text(success ? '친구가 삭제되었어요' : '삭제에 실패했어요'),
                   ),

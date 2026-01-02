@@ -377,6 +377,7 @@ class _TiminglePageState extends ConsumerState<TiminglePage> {
                   );
 
                   Navigator.pop(context);
+                  final messenger = ScaffoldMessenger.of(context);
 
                   final event =
                       await ref.read(eventsProvider.notifier).createEvent(
@@ -389,7 +390,7 @@ class _TiminglePageState extends ConsumerState<TiminglePage> {
                           );
 
                   if (event != null && mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    messenger.showSnackBar(
                       const SnackBar(content: Text('약속이 생성되었습니다')),
                     );
                   }

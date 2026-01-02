@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 /// 앱 설정 클래스
 /// 환경변수 기반 설정을 관리합니다.
 ///
@@ -78,11 +80,11 @@ class AppConfig {
   static void printConfig() {
     if (!isDebug) return;
 
-    print('=== App Config ===');
-    print('Environment: $environment');
-    print('API Base URL: $apiBaseUrl');
-    print('WebSocket URL: $wsUrl');
-    print('App Version: $appVersion ($buildNumber)');
-    print('==================');
+    debugPrint('=== App Config ===');
+    debugPrint('Environment: $environment');
+    debugPrint('API Base URL: $apiBaseUrl');
+    debugPrint('WebSocket URL: $wsUrl');
+    debugPrint('App Version: $appVersion ($buildNumber)');
+    debugPrint('==================');
   }
 }

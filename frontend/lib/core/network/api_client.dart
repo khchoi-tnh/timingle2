@@ -229,7 +229,6 @@ class ApiClient {
         return const NetworkException(message: '보안 인증서 오류');
 
       case DioExceptionType.unknown:
-      default:
         if (error.error is Exception) {
           return error.error as Exception;
         }
