@@ -67,21 +67,36 @@ func main() {
 	// Initialize JWT manager
 	jwtManager := utils.NewJWTManager(cfg.JWT.Secret, cfg.JWT.AccessExpiry, cfg.JWT.RefreshExpiry)
 
+	// Initialize Google OAuth verifier with client secret for token refresh
+	googleVerifier := utils.NewGoogleOAuthVerifierWithSecret(
+		cfg.OAuth.GoogleClientIDWeb,
+		cfg.OAuth.GoogleClientSecret,
+		cfg.OAuth.GoogleClientID,
+		cfg.OAuth.GoogleClientIDiOS,
+		cfg.OAuth.GoogleClientIDWeb,
+	)
+
 	// Initialize repositories
 	userRepo := repositories.NewUserRepository(postgresDB.DB)
 	eventRepo := repositories.NewEventRepository(postgresDB.DB)
 	authRepo := repositories.NewAuthRepository(postgresDB.DB)
+	oauthRepo := repositories.NewOAuthRepository(postgresDB.DB)
 	chatRepo := repositories.NewChatRepository(scyllaDB.Session)
+	inviteRepo := repositories.NewInviteRepository(postgresDB.DB)
 
 	// Initialize services
-	authService := services.NewAuthService(userRepo, authRepo, jwtManager)
+	authService := services.NewAuthService(userRepo, authRepo, oauthRepo, jwtManager, googleVerifier)
 	eventService := services.NewEventService(eventRepo, userRepo)
 	chatService := services.NewChatService(chatRepo, userRepo, eventService, hub, natsClient.JS)
+	calendarService := services.NewCalendarService(authService, eventRepo, oauthRepo)
+	inviteService := services.NewInviteService(inviteRepo, eventRepo, userRepo, cfg.Server.BaseURL)
 
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(authService)
 	eventHandler := handlers.NewEventHandler(eventService)
+	calendarHandler := handlers.NewCalendarHandler(calendarService)
 	wsHandler := handlers.NewWebSocketHandler(hub, chatService)
+	inviteHandler := handlers.NewInviteHandler(inviteService)
 
 	// Setup router
 	router := gin.Default()
@@ -107,6 +122,8 @@ func main() {
 			auth.POST("/register", authHandler.Register)
 			auth.POST("/login", authHandler.Login)
 			auth.POST("/refresh", authHandler.RefreshToken)
+			auth.POST("/google", authHandler.GoogleLogin)                   // Google OAuth login
+			auth.POST("/google/calendar", authHandler.GoogleCalendarLogin) // Google OAuth login with Calendar scope
 
 			// Protected auth routes
 			authProtected := auth.Group("")
@@ -137,10 +154,32 @@ func main() {
 
 			// Chat messages
 			events.GET("/:id/messages", wsHandler.GetMessages)
+
+			// Invite links
+			events.POST("/:id/invite-link", inviteHandler.CreateInviteLink)
+			events.POST("/:id/accept", inviteHandler.AcceptInvite)
+			events.POST("/:id/decline", inviteHandler.DeclineInvite)
+		}
+
+		// Invite routes (protected) - for accessing invite links
+		invite := v1.Group("/invite")
+		invite.Use(middleware.AuthMiddleware(jwtManager, userRepo))
+		{
+			invite.GET("/:code", inviteHandler.GetInviteInfo)
+			invite.POST("/:code/join", inviteHandler.JoinViaInvite)
 		}
 
 		// WebSocket route (protected)
 		v1.GET("/ws", middleware.AuthMiddleware(jwtManager, userRepo), wsHandler.HandleWebSocket)
+
+		// Calendar routes (protected)
+		calendar := v1.Group("/calendar")
+		calendar.Use(middleware.AuthMiddleware(jwtManager, userRepo))
+		{
+			calendar.GET("/status", calendarHandler.CheckCalendarAccess)
+			calendar.GET("/events", calendarHandler.GetCalendarEvents)
+			calendar.POST("/sync/:event_id", calendarHandler.SyncEventToCalendar)
+		}
 	}
 
 	// Start server

@@ -1,0 +1,203 @@
+{
+  "info": {
+    "name": "4. Events (이벤트)",
+    "description": "이벤트(약속) 관련 API\n\n### 포함 기능\n- 4-1. CRUD (생성, 조회, 수정, 삭제)\n- 4-2. 상태 관리 (확정, 취소)\n- 4-3. 메시지\n- 4-4. 초대 (링크 생성, 참가)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "4-1. CRUD",
+      "item": [
+        {
+          "name": "Create Event (이벤트 생성)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{access_token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"점심 약속\",\n  \"description\": \"강남역 근처에서 점심\",\n  \"location\": \"강남역 11번 출구\",\n  \"start_time\": \"2024-01-20T12:00:00Z\",\n  \"end_time\": \"2024-01-20T13:00:00Z\",\n  \"participant_ids\": [2, 3]\n}"
+            },
+            "url": {"raw": "{{base_url}}/events", "host": ["{{base_url}}"], "path": ["events"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test(\"Status 200/201\", () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));", "if (pm.response.code === 200 || pm.response.code === 201) {", "    var json = pm.response.json();", "    if (json.id) pm.environment.set(\"event_id\", json.id);", "}"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "Get Events (목록 조회)",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/events?status=PROPOSED&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["events"],
+              "query": [
+                {"key": "status", "value": "PROPOSED"},
+                {"key": "limit", "value": "20"}
+              ]
+            }
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test(\"Status 200\", () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "Get Event by ID (상세 조회)",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {"raw": "{{base_url}}/events/{{event_id}}", "host": ["{{base_url}}"], "path": ["events", "{{event_id}}"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test(\"Status 200\", () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "Update Event (수정)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{access_token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"점심 약속 (수정됨)\",\n  \"location\": \"강남역 10번 출구로 변경\"\n}"
+            },
+            "url": {"raw": "{{base_url}}/events/{{event_id}}", "host": ["{{base_url}}"], "path": ["events", "{{event_id}}"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test(\"Status 200\", () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "Delete Event (삭제)",
+          "request": {
+            "method": "DELETE",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {"raw": "{{base_url}}/events/{{event_id}}", "host": ["{{base_url}}"], "path": ["events", "{{event_id}}"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test(\"Status 200/204\", () => pm.expect(pm.response.code).to.be.oneOf([200, 204]));"], "type": "text/javascript"}}]
+        }
+      ]
+    },
+    {
+      "name": "4-2. Status (상태)",
+      "item": [
+        {
+          "name": "Confirm Event (확정)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {"raw": "{{base_url}}/events/{{event_id}}/confirm", "host": ["{{base_url}}"], "path": ["events", "{{event_id}}", "confirm"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test(\"Status 200\", () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "Cancel Event (취소)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {"raw": "{{base_url}}/events/{{event_id}}/cancel", "host": ["{{base_url}}"], "path": ["events", "{{event_id}}", "cancel"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test(\"Status 200\", () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        }
+      ]
+    },
+    {
+      "name": "4-3. Messages (메시지)",
+      "item": [
+        {
+          "name": "Get Messages (조회)",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/events/{{event_id}}/messages?limit=50",
+              "host": ["{{base_url}}"],
+              "path": ["events", "{{event_id}}", "messages"],
+              "query": [{"key": "limit", "value": "50"}]
+            },
+            "description": "⚠️ 실시간 메시지는 WebSocket 사용"
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test(\"Status 200\", () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "Send Message (전송)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{access_token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"안녕하세요! 약속 장소 확인했습니다.\"\n}"
+            },
+            "url": {"raw": "{{base_url}}/events/{{event_id}}/messages", "host": ["{{base_url}}"], "path": ["events", "{{event_id}}", "messages"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test(\"Status 200/201\", () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));"], "type": "text/javascript"}}]
+        }
+      ]
+    },
+    {
+      "name": "4-4. Invites (초대)",
+      "description": "초대 링크 생성 및 참가\n\n**핵심 원칙**: 시스템이 문자를 보내지 않음 - 사용자 폰에서 직접 공유",
+      "item": [
+        {
+          "name": "Create Invite Link (초대 링크 생성)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{access_token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expires_in_hours\": 168,\n  \"max_uses\": 0\n}"
+            },
+            "url": {"raw": "{{base_url}}/events/{{event_id}}/invite-link", "host": ["{{base_url}}"], "path": ["events", "{{event_id}}", "invite-link"]},
+            "description": "이벤트 초대 링크를 생성합니다.\n\n**생성자만 사용 가능**\n\n- `expires_in_hours`: 만료 시간 (기본 168 = 7일)\n- `max_uses`: 최대 사용 횟수 (0 = 무제한)\n\n생성된 링크를 카카오톡, 문자 등으로 공유하세요."
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test(\"Status 200\", () => pm.response.to.have.status(200));", "if (pm.response.code === 200) {", "    var json = pm.response.json();", "    if (json.code) pm.environment.set(\"invite_code\", json.code);", "}"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "Get Invite Info (초대 정보 조회)",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {"raw": "{{base_url}}/invite/{{invite_code}}", "host": ["{{base_url}}"], "path": ["invite", "{{invite_code}}"]},
+            "description": "초대 링크 정보를 조회합니다.\n\n- 이벤트 정보, 생성자 정보 반환\n- `action: confirm` = 참가 가능\n- `action: already_joined` = 이미 참가 중"
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test(\"Status 200\", () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "Join via Invite (초대 링크로 참가)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {"raw": "{{base_url}}/invite/{{invite_code}}/join", "host": ["{{base_url}}"], "path": ["invite", "{{invite_code}}", "join"]},
+            "description": "초대 링크를 통해 이벤트에 참가합니다."
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test(\"Status 200\", () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "Accept Invite (초대 수락)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {"raw": "{{base_url}}/events/{{event_id}}/accept", "host": ["{{base_url}}"], "path": ["events", "{{event_id}}", "accept"]},
+            "description": "이벤트 초대를 수락합니다.\n\n참가자 상태: PENDING → ACCEPTED"
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test(\"Status 200\", () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "Decline Invite (초대 거절)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {"raw": "{{base_url}}/events/{{event_id}}/decline", "host": ["{{base_url}}"], "path": ["events", "{{event_id}}", "decline"]},
+            "description": "이벤트 초대를 거절합니다.\n\n참가자 상태: PENDING → DECLINED"
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test(\"Status 200\", () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        }
+      ]
+    }
+  ]
+}

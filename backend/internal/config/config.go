@@ -15,12 +15,22 @@ type Config struct {
 	NATS     NATSConfig
 	ScyllaDB ScyllaDBConfig
 	JWT      JWTConfig
+	OAuth    OAuthConfig
+}
+
+// OAuthConfig holds OAuth provider configuration
+type OAuthConfig struct {
+	GoogleClientID        string // Android client ID
+	GoogleClientIDiOS     string // iOS client ID
+	GoogleClientIDWeb     string // Web client ID (used for ID token verification)
+	GoogleClientSecret    string // Web client secret (for token refresh)
 }
 
 // ServerConfig holds server-specific configuration
 type ServerConfig struct {
 	Port    string
 	GinMode string
+	BaseURL string // Base URL for generating invite links
 }
 
 // PostgresConfig holds PostgreSQL connection configuration
@@ -65,6 +75,7 @@ func Load() (*Config, error) {
 		Server: ServerConfig{
 			Port:    getEnv("PORT", "8080"),
 			GinMode: getEnv("GIN_MODE", "debug"),
+			BaseURL: getEnv("BASE_URL", "https://timingle.app"),
 		},
 		Postgres: PostgresConfig{
 			Host:     getEnv("POSTGRES_HOST", "localhost"),
@@ -91,6 +102,12 @@ func Load() (*Config, error) {
 			Secret:        getEnv("JWT_SECRET", "your-secret-key-change-this-in-production"),
 			AccessExpiry:  getEnvAsDuration("JWT_ACCESS_EXPIRY", "15m"),
 			RefreshExpiry: getEnvAsDuration("JWT_REFRESH_EXPIRY", "168h"),
+		},
+		OAuth: OAuthConfig{
+			GoogleClientID:        getEnv("GOOGLE_CLIENT_ID_AND", ""),
+			GoogleClientIDiOS:     getEnv("GOOGLE_CLIENT_ID_IOS", ""),
+			GoogleClientIDWeb:     getEnv("GOOGLE_CLIENT_ID_WEB", ""),
+			GoogleClientSecret:    getEnv("GOOGLE_CLIENT_SECRET", ""),
 		},
 	}
 
