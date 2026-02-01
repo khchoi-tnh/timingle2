@@ -116,6 +116,40 @@ bun run dev
 http://localhost:5173
 ```
 
+### Step 5: 초기 Admin 계정 생성 및 로그인
+
+**최초 실행 시 DB에 Admin 사용자를 생성해야 합니다.**
+
+#### 방법 1: WSL에서 SQL 직접 실행
+
+```bash
+# WSL 접속
+wsl -d AlmaLinux-Kitten-10
+
+# Admin 사용자 생성
+podman exec -it timingle-postgres psql -U timingle -d timingle -c "
+INSERT INTO users (phone, name, role, status)
+VALUES ('01012345678', 'Super Admin', 'SUPER_ADMIN', 'ACTIVE')
+ON CONFLICT (phone) DO NOTHING;
+"
+
+# 생성 확인
+podman exec -it timingle-postgres psql -U timingle -d timingle -c "
+SELECT id, phone, name, role FROM users WHERE role IN ('ADMIN', 'SUPER_ADMIN');
+"
+```
+
+#### 로그인 정보
+
+| 항목 | 값 |
+|------|-----|
+| **전화번호** | `01012345678` |
+| **비밀번호** | `admin123` (개발용 임시 비밀번호) |
+
+> ⚠️ **주의**: `admin123`은 개발용 임시 비밀번호입니다.
+> 프로덕션 환경에서는 반드시 비밀번호 해싱 및 보안 강화가 필요합니다.
+> ([참고: admin/src/routes/auth.ts:47](../admin/src/routes/auth.ts#L47))
+
 ---
 
 ## 포트 정리
@@ -227,6 +261,45 @@ netstat -ano | findstr :3000
 taskkill /PID <PID> /F
 ```
 
+### Frontend 외부 접속 불가 (WSL에서 접속 안됨)
+
+**증상:**
+```bash
+# WSL에서 확인
+netstat -tnlp | grep 5173
+tcp  0  0 127.0.0.1:5173  0.0.0.0:*  LISTEN  # ← localhost에만 바인딩
+```
+
+WSL이나 다른 기기에서 `http://<IP>:5173` 접속이 안됨.
+
+**원인:**
+Vite 개발 서버가 `127.0.0.1` (localhost)에만 바인딩되어 있음.
+
+**해결:**
+`admin/web/vite.config.ts` 파일 수정:
+
+```typescript
+export default defineConfig({
+  // ...
+  server: {
+    host: '0.0.0.0',  // ← 외부 접속 허용
+    port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+    },
+  },
+})
+```
+
+서버 재시작 후 확인:
+```bash
+netstat -tnlp | grep 5173
+tcp  0  0 0.0.0.0:5173  0.0.0.0:*  LISTEN  # ← 모든 인터페이스에 바인딩
+```
+
 ---
 
 ## 관련 문서
@@ -237,4 +310,4 @@ taskkill /PID <PID> /F
 
 ---
 
-마지막 업데이트: 2026-02-01
+마지막 업데이트: 2026-02-01 (로그인 정보 및 외부 접속 설정 추가)
