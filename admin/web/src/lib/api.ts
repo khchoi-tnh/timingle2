@@ -63,7 +63,7 @@ class ApiClient {
   async login(phoneNumber: string, password: string) {
     const result = await this.request<{ token: string; user: User }>('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ phone_number: phoneNumber, password }),
+      body: JSON.stringify({ phone: phoneNumber, password }),
     })
     this.setToken(result.token)
     return result
