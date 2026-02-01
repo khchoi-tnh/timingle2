@@ -66,6 +66,9 @@ timingle2/
 │   ├── spec.md           # 원본 설계 대화 (ChatGPT 기록)
 │   ├── images/           # UI 프로토타입, 로고
 │   ├── phases/           # 단계별 실행 계획
+│   ├── plan/             # ⭐ 작업 계획 문서 (Claude 생성)
+│   ├── mermaid/          # 다이어그램 문서
+│   ├── troubleshooting/  # 문제 해결 가이드
 │   ├── ARCHITECTURE.md   # 아키텍처 문서
 │   ├── DATABASE.md       # DB 스키마
 │   ├── API.md            # API 명세
@@ -132,6 +135,116 @@ const kGrayDark = Color(0xFF374151);         // 텍스트
 - Subtitle: 14px Medium
 - Body: 12px Regular
 - Badge: 10px Medium
+
+---
+
+## 📊 다이어그램 규칙
+
+### 다이어그램 = Mermaid
+**"다이어그램을 그려줘"** 요청 시 반드시 **Mermaid sequenceDiagram** 형식으로 작성합니다.
+
+```mermaid
+sequenceDiagram
+    participant A as 📱 Flutter
+    participant B as 🖥️ Backend
+    A->>B: API 요청
+    B->>A: 응답
+```
+
+### 다이어그램 저장 위치
+- **위치**: `docs/mermaid/` 폴더
+- **형식**: `.md` 파일 (Mermaid 코드 블록 포함)
+- **네이밍**: `{기능}_{세부}.md` (예: `auth_google_oauth.md`)
+
+### 참여자 아이콘 규칙
+| 아이콘 | 의미 |
+|-------|------|
+| 👤 | 사용자/개발자 |
+| 📱 | Flutter 앱 |
+| 🖥️ | Backend API |
+| 🔵 | Google 서비스 |
+| 🗄️ | Database |
+| 📅 | Calendar API |
+| 📮 | Postman |
+| 🔧 | 도구/Playground |
+
+### 기존 다이어그램
+- [docs/mermaid/README.md](docs/mermaid/README.md) - 다이어그램 목록
+- [docs/mermaid/auth_google_oauth.md](docs/mermaid/auth_google_oauth.md) - Google OAuth
+- [docs/mermaid/auth_google_calendar.md](docs/mermaid/auth_google_calendar.md) - Calendar 로그인
+- [docs/mermaid/auth_oauth_playground.md](docs/mermaid/auth_oauth_playground.md) - OAuth Playground
+- [docs/mermaid/flutter_clean_architecture.md](docs/mermaid/flutter_clean_architecture.md) - Flutter 레이어
+
+---
+
+## 📋 Plan 문서 규칙
+
+### ⭐ 필수: Plan 생성 시 문서화
+
+**Claude가 작업 계획을 세울 경우, 반드시 문서로 생성해야 합니다.**
+
+### 저장 위치
+```
+docs/plan/
+```
+
+### 파일명 규칙
+```
+{번호}.{기능명}.md
+
+예시:
+- 001.google-login-implementation.md
+- 002.admin-dashboard-setup.md
+- 003.calendar-sync-feature.md
+- 004.websocket-chat-system.md
+```
+
+### 번호 규칙
+- **3자리 숫자**: `001`, `002`, `003`, ...
+- **순차적 증가**: 기존 파일 확인 후 다음 번호 사용
+- **중복 금지**: 같은 번호 사용 불가
+
+### Plan 문서 템플릿
+```markdown
+# {번호}. {기능명}
+
+## 개요
+- **목표**: [달성하려는 목표]
+- **범위**: [영향받는 파일/모듈]
+- **예상 작업량**: [예상 단계 수]
+
+## 현재 상태
+[현재 코드베이스 상태 분석]
+
+## 구현 계획
+
+### Phase 1: [단계명]
+- [ ] Task 1
+- [ ] Task 2
+
+### Phase 2: [단계명]
+- [ ] Task 1
+- [ ] Task 2
+
+## 기술적 고려사항
+[아키텍처, 의존성, 제약사항 등]
+
+## 위험 요소
+[잠재적 문제점 및 대응 방안]
+
+---
+생성일: YYYY-MM-DD
+상태: 계획중 | 진행중 | 완료
+```
+
+### 예시
+```bash
+# 기존 plan 문서 확인
+ls docs/plan/
+
+# 결과: 001.xxx.md, 002.yyy.md 있음
+# → 다음 파일은 003.zzz.md로 생성
+```
 
 ---
 
@@ -262,6 +375,7 @@ cat docs/phases/PHASE_0_SETUP.md
 
 1. **[docs/troubleshooting/README.md](docs/troubleshooting/README.md)** - 전체 가이드
 2. **카테고리별 문서**:
+   - [WSL 문제](docs/troubleshooting/wsl.md) - Windows 개발 환경 (nftables, 네트워크)
    - [ScyllaDB 문제](docs/troubleshooting/scylladb.md)
    - [Podman 문제](docs/troubleshooting/podman.md)
    - [PostgreSQL 문제](docs/troubleshooting/postgresql.md)
@@ -311,22 +425,37 @@ cat docs/phases/PHASE_0_SETUP.md
 - ✅ 기술 스택 결정
 - ✅ 브랜드 가이드라인 확정
 - ✅ 문서 구조 설계
+- ✅ **Phase 0: WSL 개발 환경 구축 완료** (2026-01-07)
+  - WSL2 + AlmaLinux Kitten 10
+  - Podman 5.6.0 + podman-compose 1.5.0
+  - Go 1.25.5
+  - 컨테이너: PostgreSQL, Redis, NATS, ScyllaDB
+  - Backend API 정상 동작 확인
 
-### 진행 중
-- 🔄 프로젝트 문서 작성
-  - CLAUDE.md (현재 파일)
-  - README.md
-  - docs/PHASES.md
-  - docs/phases/*
+### 개발 환경 (Windows + WSL)
+
+```
+Windows (D:\projects\timingle2)     WSL (~/projects/timingle2)
+├── frontend/ (Flutter)              ├── backend/ (Go)
+└── docs/                            └── containers/ (Podman)
+
+Flutter → localhost:8080 → Backend API
+```
+
+**서버 시작:**
+```bash
+wsl -d AlmaLinux-Kitten-10
+bash /mnt/d/projects/timingle2/containers/setup_podman.sh
+bash /mnt/d/projects/timingle2/backend/run.sh
+```
 
 ### 다음 단계
-1. 모든 문서 완성
-2. Phase 0: 환경 설정 실행
-3. Phase 1: 백엔드 핵심 구현
-4. Phase 2: 실시간 기능
-5. Phase 3: Flutter 앱
-6. Phase 4: 통합 및 테스트
-7. Phase 5: 배포
+1. ~~Phase 0: 환경 설정~~ ✅
+2. Phase 1: 백엔드 핵심 구현
+3. Phase 2: 실시간 기능
+4. Phase 3: Flutter 앱
+5. Phase 4: 통합 및 테스트
+6. Phase 5: 배포
 
 ---
 
@@ -387,4 +516,4 @@ cat docs/phases/PHASE_0_SETUP.md
 **이 문서는 Claude와의 효과적인 협업을 위한 가이드입니다.**
 **프로젝트 진행 중 지속적으로 업데이트됩니다.**
 
-마지막 업데이트: 2025-12-31
+마지막 업데이트: 2026-01-24
