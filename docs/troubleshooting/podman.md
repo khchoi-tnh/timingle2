@@ -67,4 +67,40 @@ podman network inspect timingle-network
 
 ---
 
-**마지막 업데이트**: 2025-12-31
+## ❌ 문제 4: WSL에서 nftables 오류
+
+### 증상
+```
+Error: unable to start container: netavark: nftables error:
+"nft" did not return successfully while applying ruleset
+```
+
+### 원인
+- WSL2 커널이 nftables 커널 모듈을 완전히 지원하지 않음
+- Podman 5.x는 기본적으로 netavark + nftables 사용
+
+### 해결 방법
+**`network_mode: host`** 사용 → 자세한 내용은 [WSL 문제 해결](./wsl.md) 참조
+
+---
+
+## ❌ 문제 5: podman-compose PATH 문제 (pip 설치 시)
+
+### 증상
+```
+WARNING: The script podman-compose is installed in '/root/.local/bin' which is not on PATH.
+```
+
+### 해결 방법
+```bash
+# PATH에 추가
+echo 'export PATH=$PATH:~/.local/bin' >> ~/.bashrc
+source ~/.bashrc
+
+# 또는 전체 경로 사용
+~/.local/bin/podman-compose up -d
+```
+
+---
+
+**마지막 업데이트**: 2026-01-07

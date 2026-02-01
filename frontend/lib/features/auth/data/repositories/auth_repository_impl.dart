@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:dartz/dartz.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
@@ -17,16 +20,19 @@ class AuthRepositoryImpl implements AuthRepository {
   final TokenStorage _tokenStorage;
   final ApiClient _apiClient;
   final WebSocketClient _wsClient;
+  final GoogleSignIn _googleSignIn;
 
   AuthRepositoryImpl({
     required AuthRemoteDataSource remoteDataSource,
     required TokenStorage tokenStorage,
     required ApiClient apiClient,
     required WebSocketClient wsClient,
+    GoogleSignIn? googleSignIn,
   })  : _remoteDataSource = remoteDataSource,
         _tokenStorage = tokenStorage,
         _apiClient = apiClient,
-        _wsClient = wsClient;
+        _wsClient = wsClient,
+        _googleSignIn = googleSignIn ?? GoogleSignIn(scopes: ['email', 'profile']);
 
   @override
   Future<Either<Failure, (User, AuthTokens)>> registerWithPhone({
@@ -38,6 +44,62 @@ class AuthRepositoryImpl implements AuthRepository {
           await _remoteDataSource.registerWithPhone(
         phone: phone,
         name: name,
+      );
+
+      // 토큰 저장
+      await _saveAuthState(user, accessToken, refreshToken);
+
+      final tokens = AuthTokens(
+        accessToken: accessToken,
+        refreshToken: refreshToken,
+      );
+
+      return Right((user, tokens));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(
+        message: e.message,
+        code: e.code,
+        statusCode: e.statusCode,
+      ));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(message: e.message));
+    } on AuthException catch (e) {
+      return Left(AuthFailure(message: e.message, code: e.code));
+    } catch (e) {
+      return Left(UnknownFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, (User, AuthTokens)>> loginWithGoogle() async {
+    try {
+      // Google Sign-In 실행
+      final googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        return const Left(AuthFailure(
+          message: 'Google 로그인이 취소되었습니다',
+          code: 'GOOGLE_SIGN_IN_CANCELLED',
+        ));
+      }
+
+      // ID 토큰 가져오기
+      final googleAuth = await googleUser.authentication;
+      final idToken = googleAuth.idToken;
+      if (idToken == null) {
+        return const Left(AuthFailure(
+          message: 'Google ID 토큰을 가져올 수 없습니다',
+          code: 'NO_ID_TOKEN',
+        ));
+      }
+
+      // 플랫폼 확인
+      final platform = Platform.isAndroid ? 'android' : 'ios';
+
+      // Backend API 호출
+      final (user, accessToken, refreshToken) =
+          await _remoteDataSource.loginWithGoogle(
+        idToken: idToken,
+        platform: platform,
       );
 
       // 토큰 저장
@@ -95,6 +157,13 @@ class AuthRepositoryImpl implements AuthRepository {
       await _remoteDataSource.logout();
     } catch (_) {
       // 서버 로그아웃 실패해도 계속 진행
+    }
+
+    // Google Sign-Out
+    try {
+      await _googleSignIn.signOut();
+    } catch (_) {
+      // Google Sign-Out 실패해도 계속 진행
     }
 
     // 로컬 정리

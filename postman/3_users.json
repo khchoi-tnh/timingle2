@@ -1,0 +1,19 @@
+{
+  "info": {
+    "name": "3. Users (사용자)",
+    "description": "사용자 관련 API\n\n### 포함 기능\n- 3-1. 내 정보 조회",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "3-1. Get My Profile (내 정보)",
+      "request": {
+        "method": "GET",
+        "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+        "url": {"raw": "{{base_url}}/auth/me", "host": ["{{base_url}}"], "path": ["auth", "me"]},
+        "description": "현재 로그인한 사용자의 정보를 조회합니다.\n\n**인증 필요** ✅\n\n⚠️ 이 엔드포인트는 `/auth/me`입니다 (users 아님)"
+      },
+      "event": [{"listen": "test", "script": {"exec": ["pm.test(\"Status 200\", () => pm.response.to.have.status(200));", "if (pm.response.code === 200) {", "    var json = pm.response.json();", "    if (json.id) pm.environment.set(\"user_id\", json.id);", "}"], "type": "text/javascript"}}]
+    }
+  ]
+}

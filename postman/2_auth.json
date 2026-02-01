@@ -1,0 +1,100 @@
+{
+  "info": {
+    "name": "2. Auth (인증)",
+    "description": "인증 관련 API\n\n### 포함 기능\n- 2-1. 회원가입/로그인 (전화번호)\n- 2-2. 토큰 관리\n- 2-3. Google OAuth",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "2-1. Phone Auth",
+      "item": [
+        {
+          "name": "Register (회원가입)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"01012345678\",\n  \"password\": \"password123\",\n  \"name\": \"테스트유저\"\n}"
+            },
+            "url": {"raw": "{{base_url}}/auth/register", "host": ["{{base_url}}"], "path": ["auth", "register"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test(\"Status 200/201\", () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "Login (로그인)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"01012345678\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {"raw": "{{base_url}}/auth/login", "host": ["{{base_url}}"], "path": ["auth", "login"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": ["if (pm.response.code === 200) {", "    var json = pm.response.json();", "    if (json.access_token) pm.environment.set(\"access_token\", json.access_token);", "    if (json.refresh_token) pm.environment.set(\"refresh_token\", json.refresh_token);", "}", "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        }
+      ]
+    },
+    {
+      "name": "2-2. Token Management",
+      "item": [
+        {
+          "name": "Refresh Token (토큰 갱신)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
+            },
+            "url": {"raw": "{{base_url}}/auth/refresh", "host": ["{{base_url}}"], "path": ["auth", "refresh"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": ["if (pm.response.code === 200) {", "    var json = pm.response.json();", "    if (json.access_token) pm.environment.set(\"access_token\", json.access_token);", "}", "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "Logout (로그아웃)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {"raw": "{{base_url}}/auth/logout", "host": ["{{base_url}}"], "path": ["auth", "logout"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test(\"Status 200\", () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        }
+      ]
+    },
+    {
+      "name": "2-3. Google OAuth",
+      "item": [
+        {
+          "name": "Google Login (기본)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_token\": \"{{google_id_token}}\",\n  \"platform\": \"android\"\n}"
+            },
+            "url": {"raw": "{{base_url}}/auth/google", "host": ["{{base_url}}"], "path": ["auth", "google"]},
+            "description": "🔑 Google ID Token 발급 방법:\n\n**방법 1: OAuth Playground (권장)**\n1. https://developers.google.com/oauthplayground 접속\n2. 설정(⚙️)에서 'Use your own OAuth credentials' 체크\n3. Client ID/Secret 입력\n4. Scope 선택: openid, email, profile\n5. Authorize → Exchange → id_token 복사\n\n**방법 2: Flutter 앱**\n- 앱에서 로그인 후 디버그 로그에서 복사\n\n📖 자세한 가이드: postman/docs/GOOGLE_AUTH_FLOW.md"
+          },
+          "event": [{"listen": "test", "script": {"exec": ["if (pm.response.code === 200) {", "    var json = pm.response.json();", "    if (json.access_token) pm.environment.set(\"access_token\", json.access_token);", "    if (json.refresh_token) pm.environment.set(\"refresh_token\", json.refresh_token);", "}", "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "Google Login + Calendar",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_token\": \"{{google_id_token}}\",\n  \"access_token\": \"{{google_access_token}}\",\n  \"refresh_token\": \"{{google_refresh_token}}\",\n  \"platform\": \"android\"\n}"
+            },
+            "url": {"raw": "{{base_url}}/auth/google/calendar", "host": ["{{base_url}}"], "path": ["auth", "google", "calendar"]},
+            "description": "📅 Calendar 권한 포함 로그인\n\n**OAuth Playground에서 토큰 발급:**\n1. https://developers.google.com/oauthplayground\n2. Scope 선택:\n   - openid, email, profile\n   - https://www.googleapis.com/auth/calendar\n3. Authorize → Exchange\n4. 3가지 토큰 복사:\n   - id_token → google_id_token\n   - access_token → google_access_token\n   - refresh_token → google_refresh_token\n\n📖 자세한 가이드: postman/docs/GOOGLE_AUTH_FLOW.md"
+          },
+          "event": [{"listen": "test", "script": {"exec": ["if (pm.response.code === 200) {", "    var json = pm.response.json();", "    if (json.access_token) pm.environment.set(\"access_token\", json.access_token);", "}", "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,78 @@
+version: '3.8'
+
+# WSL용 Podman Compose - host 네트워크 모드 사용 (nftables 우회)
+services:
+  # PostgreSQL - 주요 데이터
+  postgres:
+    image: docker.io/postgres:17-alpine
+    container_name: timingle-postgres
+    network_mode: host
+    environment:
+      POSTGRES_USER: timingle
+      POSTGRES_PASSWORD: timingle_dev_password
+      POSTGRES_DB: timingle
+    volumes:
+      - postgres_data:/var/lib/postgresql/data:Z
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:Z
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U timingle -h localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Redis - 캐시 및 세션
+  redis:
+    image: docker.io/redis:8.4-alpine
+    container_name: timingle-redis
+    network_mode: host
+    volumes:
+      - redis_data:/data:Z
+    command: redis-server --appendonly yes --port 6379
+    healthcheck:
+      test: ["CMD", "redis-cli", "-h", "localhost", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # NATS - 메시지 큐
+  nats:
+    image: docker.io/nats:2.12-alpine
+    container_name: timingle-nats
+    network_mode: host
+    command: >
+      -js
+      -sd /data
+      -m 8222
+      -p 4222
+    volumes:
+      - nats_data:/data:Z
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost:8222/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ScyllaDB - 채팅 메시지 및 히스토리
+  scylla:
+    image: docker.io/scylladb/scylla:2025.4
+    container_name: timingle-scylla
+    network_mode: host
+    volumes:
+      - scylla_data:/var/lib/scylla:Z
+    command: --smp 1 --memory 1G --overprovisioned 1 --api-address 0.0.0.0 --developer-mode 1 --listen-address 0.0.0.0 --rpc-address 0.0.0.0 --broadcast-address 127.0.0.1 --broadcast-rpc-address 127.0.0.1
+    healthcheck:
+      test: ["CMD", "cqlsh", "-e", "DESCRIBE KEYSPACES"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  nats_data:
+  scylla_data:

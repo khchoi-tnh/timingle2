@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -9,23 +10,32 @@ import (
 	"github.com/khchoi-tnh/timingle/pkg/utils"
 )
 
+// CalendarScope is the Google Calendar API scope
+const CalendarScope = "https://www.googleapis.com/auth/calendar"
+
 // AuthService handles authentication business logic
 type AuthService struct {
-	userRepo  *repositories.UserRepository
-	authRepo  *repositories.AuthRepository
-	jwtManager *utils.JWTManager
+	userRepo       *repositories.UserRepository
+	authRepo       *repositories.AuthRepository
+	oauthRepo      *repositories.OAuthRepository
+	jwtManager     *utils.JWTManager
+	googleVerifier *utils.GoogleOAuthVerifier
 }
 
 // NewAuthService creates a new auth service
 func NewAuthService(
 	userRepo *repositories.UserRepository,
 	authRepo *repositories.AuthRepository,
+	oauthRepo *repositories.OAuthRepository,
 	jwtManager *utils.JWTManager,
+	googleVerifier *utils.GoogleOAuthVerifier,
 ) *AuthService {
 	return &AuthService{
-		userRepo:   userRepo,
-		authRepo:   authRepo,
-		jwtManager: jwtManager,
+		userRepo:       userRepo,
+		authRepo:       authRepo,
+		oauthRepo:      oauthRepo,
+		jwtManager:     jwtManager,
+		googleVerifier: googleVerifier,
 	}
 }
 
@@ -112,6 +122,249 @@ func (s *AuthService) Logout(userID int64) error {
 // ValidateAccessToken validates an access token and returns claims
 func (s *AuthService) ValidateAccessToken(tokenString string) (*utils.Claims, error) {
 	return s.jwtManager.ValidateAccessToken(tokenString)
+}
+
+// GoogleLogin handles Google OAuth login
+// Flow:
+// 1. Verify Google ID token
+// 2. Find or create user based on Google email
+// 3. Link/update OAuth account
+// 4. Generate JWT tokens
+func (s *AuthService) GoogleLogin(ctx context.Context, req *models.GoogleLoginRequest) (*models.AuthResponse, error) {
+	// 1. Verify Google ID token
+	googlePayload, err := s.googleVerifier.VerifyIDToken(ctx, req.IDToken)
+	if err != nil {
+		return nil, fmt.Errorf("invalid Google ID token: %w", err)
+	}
+
+	// 2. Check if OAuth account already exists
+	oauthAccount, err := s.oauthRepo.FindByProviderUserID(models.OAuthProviderGoogle, googlePayload.Subject)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check OAuth account: %w", err)
+	}
+
+	var user *models.User
+
+	if oauthAccount != nil {
+		// Existing OAuth account - get the linked user
+		user, err = s.userRepo.FindByID(oauthAccount.UserID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to find user: %w", err)
+		}
+
+		// Update OAuth account info if changed
+		if needsUpdate(oauthAccount, googlePayload) {
+			oauthAccount.Email = &googlePayload.Email
+			oauthAccount.Name = &googlePayload.Name
+			oauthAccount.PictureURL = &googlePayload.Picture
+			_ = s.oauthRepo.Update(oauthAccount)
+		}
+	} else {
+		// New OAuth account - check if user exists by email
+		user, err = s.userRepo.FindByEmail(googlePayload.Email)
+		if err != nil {
+			return nil, fmt.Errorf("failed to find user by email: %w", err)
+		}
+
+		if user == nil {
+			// Create new user
+			user, err = s.userRepo.CreateOAuthUser(
+				googlePayload.Email,
+				googlePayload.Name,
+				googlePayload.Picture,
+			)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create user: %w", err)
+			}
+		}
+
+		// Create OAuth account link
+		newOAuthAccount := &models.OAuthAccount{
+			UserID:         user.ID,
+			Provider:       models.OAuthProviderGoogle,
+			ProviderUserID: googlePayload.Subject,
+			Email:          &googlePayload.Email,
+			Name:           &googlePayload.Name,
+			PictureURL:     &googlePayload.Picture,
+		}
+		if err := s.oauthRepo.Create(newOAuthAccount); err != nil {
+			return nil, fmt.Errorf("failed to link OAuth account: %w", err)
+		}
+	}
+
+	// 3. Generate JWT tokens
+	return s.generateAuthResponse(user)
+}
+
+// needsUpdate checks if OAuth account info needs to be updated
+func needsUpdate(account *models.OAuthAccount, payload *models.GoogleTokenPayload) bool {
+	if account.Email == nil || *account.Email != payload.Email {
+		return true
+	}
+	if account.Name == nil || *account.Name != payload.Name {
+		return true
+	}
+	if account.PictureURL == nil || *account.PictureURL != payload.Picture {
+		return true
+	}
+	return false
+}
+
+// GoogleLoginWithCalendar handles Google OAuth login with Calendar scope
+// This saves the access token and refresh token for Calendar API access
+func (s *AuthService) GoogleLoginWithCalendar(ctx context.Context, req *models.GoogleCalendarLoginRequest) (*models.AuthResponse, error) {
+	// 1. Verify Google ID token (same as regular login)
+	googlePayload, err := s.googleVerifier.VerifyIDToken(ctx, req.IDToken)
+	if err != nil {
+		return nil, fmt.Errorf("invalid Google ID token: %w", err)
+	}
+
+	// 2. Check if OAuth account already exists
+	oauthAccount, err := s.oauthRepo.FindByProviderUserID(models.OAuthProviderGoogle, googlePayload.Subject)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check OAuth account: %w", err)
+	}
+
+	var user *models.User
+
+	// Calculate token expiry (Google access tokens typically expire in 1 hour)
+	tokenExpiry := time.Now().Add(1 * time.Hour)
+	// Default Calendar scope
+	scopes := []string{"https://www.googleapis.com/auth/calendar"}
+
+	if oauthAccount != nil {
+		// Existing OAuth account - get the linked user
+		user, err = s.userRepo.FindByID(oauthAccount.UserID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to find user: %w", err)
+		}
+
+		// Update OAuth account with new tokens
+		refreshToken := oauthAccount.RefreshToken
+		if req.RefreshToken != "" {
+			refreshToken = &req.RefreshToken
+		}
+
+		err = s.oauthRepo.UpdateTokens(
+			oauthAccount.ID,
+			&req.AccessToken,
+			refreshToken,
+			&tokenExpiry,
+			scopes,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to update OAuth tokens: %w", err)
+		}
+
+		// Update profile info if changed
+		if needsUpdate(oauthAccount, googlePayload) {
+			oauthAccount.Email = &googlePayload.Email
+			oauthAccount.Name = &googlePayload.Name
+			oauthAccount.PictureURL = &googlePayload.Picture
+			_ = s.oauthRepo.Update(oauthAccount)
+		}
+	} else {
+		// New OAuth account - check if user exists by email
+		user, err = s.userRepo.FindByEmail(googlePayload.Email)
+		if err != nil {
+			return nil, fmt.Errorf("failed to find user by email: %w", err)
+		}
+
+		if user == nil {
+			// Create new user
+			user, err = s.userRepo.CreateOAuthUser(
+				googlePayload.Email,
+				googlePayload.Name,
+				googlePayload.Picture,
+			)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create user: %w", err)
+			}
+		}
+
+		// Create OAuth account link with tokens
+		refreshToken := &req.RefreshToken
+		if req.RefreshToken == "" {
+			refreshToken = nil
+		}
+
+		newOAuthAccount := &models.OAuthAccount{
+			UserID:         user.ID,
+			Provider:       models.OAuthProviderGoogle,
+			ProviderUserID: googlePayload.Subject,
+			Email:          &googlePayload.Email,
+			Name:           &googlePayload.Name,
+			PictureURL:     &googlePayload.Picture,
+			AccessToken:    &req.AccessToken,
+			RefreshToken:   refreshToken,
+			TokenExpiry:    &tokenExpiry,
+			Scopes:         scopes,
+		}
+		if err := s.oauthRepo.Create(newOAuthAccount); err != nil {
+			return nil, fmt.Errorf("failed to link OAuth account: %w", err)
+		}
+	}
+
+	// 3. Generate JWT tokens
+	return s.generateAuthResponse(user)
+}
+
+// GetValidAccessToken returns a valid access token for the user's Google account
+// If the token is expired, it will be refreshed automatically
+func (s *AuthService) GetValidAccessToken(ctx context.Context, userID int64) (string, error) {
+	oauthAccount, err := s.oauthRepo.FindByUserIDAndProvider(userID, models.OAuthProviderGoogle)
+	if err != nil {
+		return "", fmt.Errorf("failed to find OAuth account: %w", err)
+	}
+	if oauthAccount == nil {
+		return "", fmt.Errorf("no Google account linked")
+	}
+	if !oauthAccount.HasCalendarScope() {
+		return "", fmt.Errorf("calendar permission not granted")
+	}
+	if oauthAccount.AccessToken == nil {
+		return "", fmt.Errorf("no access token available")
+	}
+
+	// Check if token is expired
+	if oauthAccount.IsTokenExpired() {
+		if oauthAccount.RefreshToken == nil {
+			return "", fmt.Errorf("access token expired and no refresh token available")
+		}
+
+		// Refresh the token
+		tokenResp, err := s.googleVerifier.RefreshAccessToken(ctx, *oauthAccount.RefreshToken)
+		if err != nil {
+			return "", fmt.Errorf("failed to refresh token: %w", err)
+		}
+
+		// Update stored tokens
+		tokenExpiry := utils.GetTokenExpiry(tokenResp.ExpiresIn)
+		refreshToken := oauthAccount.RefreshToken
+		if tokenResp.RefreshToken != "" {
+			refreshToken = &tokenResp.RefreshToken
+		}
+
+		scopes := utils.ParseScopes(tokenResp.Scope)
+		if len(scopes) == 0 {
+			scopes = oauthAccount.Scopes
+		}
+
+		err = s.oauthRepo.UpdateTokens(
+			oauthAccount.ID,
+			&tokenResp.AccessToken,
+			refreshToken,
+			&tokenExpiry,
+			scopes,
+		)
+		if err != nil {
+			return "", fmt.Errorf("failed to update refreshed tokens: %w", err)
+		}
+
+		return tokenResp.AccessToken, nil
+	}
+
+	return *oauthAccount.AccessToken, nil
 }
 
 // generateAuthResponse generates access and refresh tokens for a user

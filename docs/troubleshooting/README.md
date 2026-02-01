@@ -11,6 +11,7 @@
 - [Podman 문제](./podman.md) - 설치, 권한, 네트워크
 - [PostgreSQL 문제](./postgresql.md) - 연결, 인증, 마이그레이션
 - [Redis & NATS 문제](./redis-nats.md) - 연결, 설정
+- [WSL 문제](../WSL.md#문제-해결) - nftables 오류, 네트워크, ScyllaDB 바인딩 (Windows 개발 환경)
 
 ### 개발 환경
 - [Go 빌드 문제](./go.md) - 설치, 패키지, 빌드 오류
@@ -95,4 +96,4 @@ docs/troubleshooting/scylladb.md
 
 **이 가이드는 프로젝트 진행 중 발생한 실제 문제들을 기록합니다.**
 
-마지막 업데이트: 2025-12-31
+마지막 업데이트: 2026-01-07

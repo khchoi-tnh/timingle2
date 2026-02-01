@@ -12,6 +12,11 @@ abstract class AuthRemoteDataSource {
     required String name,
   });
 
+  Future<(UserModel, String, String)> loginWithGoogle({
+    required String idToken,
+    required String platform,
+  });
+
   Future<String> refreshToken(String refreshToken);
 
   Future<void> logout();
@@ -52,6 +57,37 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       }
       throw ServerException(
         message: e.message ?? '회원가입에 실패했습니다',
+      );
+    }
+  }
+
+  @override
+  Future<(UserModel, String, String)> loginWithGoogle({
+    required String idToken,
+    required String platform,
+  }) async {
+    try {
+      final response = await _apiClient.post(
+        ApiConstants.authGoogle,
+        data: {
+          'id_token': idToken,
+          'platform': platform,
+        },
+      );
+
+      final data = response.data as Map<String, dynamic>;
+
+      final user = UserModel.fromJson(data['user'] as Map<String, dynamic>);
+      final accessToken = data['access_token'] as String;
+      final refreshToken = data['refresh_token'] as String;
+
+      return (user, accessToken, refreshToken);
+    } on DioException catch (e) {
+      if (e.error is Exception) {
+        throw e.error as Exception;
+      }
+      throw ServerException(
+        message: e.message ?? 'Google 로그인에 실패했습니다',
       );
     }
   }

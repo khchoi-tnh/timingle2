@@ -103,3 +103,44 @@ func (h *AuthHandler) Me(c *gin.Context) {
 
 	c.JSON(http.StatusOK, user.(*models.User).ToUserResponse())
 }
+
+// GoogleLogin handles Google OAuth login
+// POST /api/v1/auth/google
+// Request body: { "id_token": "..." }
+// Response: AuthResponse with access_token, refresh_token, user
+func (h *AuthHandler) GoogleLogin(c *gin.Context) {
+	var req models.GoogleLoginRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	response, err := h.authService.GoogleLogin(c.Request.Context(), &req)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// GoogleCalendarLogin handles Google OAuth login with Calendar scope
+// POST /api/v1/auth/google/calendar
+// Request body: { "id_token": "...", "access_token": "...", "refresh_token": "..." }
+// Response: AuthResponse with access_token, refresh_token, user
+// This endpoint saves the Google access_token and refresh_token for Calendar API access
+func (h *AuthHandler) GoogleCalendarLogin(c *gin.Context) {
+	var req models.GoogleCalendarLoginRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	response, err := h.authService.GoogleLoginWithCalendar(c.Request.Context(), &req)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}

@@ -8,9 +8,11 @@ import '../../data/repositories/auth_repository_impl.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/usecases/get_current_user.dart';
+import '../../domain/usecases/login_with_google.dart';
 import '../../domain/usecases/logout.dart';
 import '../../domain/usecases/register_with_phone.dart';
 import '../../domain/usecases/try_auto_login.dart';
+import '../../../../core/usecases/usecase.dart';
 
 /// 인증 상태
 enum AuthStatus {
@@ -87,19 +89,26 @@ final tryAutoLoginUseCaseProvider = Provider<TryAutoLogin>((ref) {
   return TryAutoLogin(ref.watch(authRepositoryProvider));
 });
 
+final loginWithGoogleUseCaseProvider = Provider<LoginWithGoogle>((ref) {
+  return LoginWithGoogle(ref.watch(authRepositoryProvider));
+});
+
 /// Auth StateNotifier
 class AuthNotifier extends StateNotifier<AuthState> {
   final RegisterWithPhone _registerWithPhone;
+  final LoginWithGoogle _loginWithGoogle;
   final Logout _logout;
   final GetCurrentUser _getCurrentUser;
   final TryAutoLogin _tryAutoLogin;
 
   AuthNotifier({
     required RegisterWithPhone registerWithPhone,
+    required LoginWithGoogle loginWithGoogle,
     required Logout logout,
     required GetCurrentUser getCurrentUser,
     required TryAutoLogin tryAutoLogin,
   })  : _registerWithPhone = registerWithPhone,
+        _loginWithGoogle = loginWithGoogle,
         _logout = logout,
         _getCurrentUser = getCurrentUser,
         _tryAutoLogin = tryAutoLogin,
@@ -159,6 +168,32 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
   }
 
+  /// Google 로그인
+  Future<bool> loginWithGoogle() async {
+    state = state.copyWith(status: AuthStatus.loading);
+
+    final result = await _loginWithGoogle(const NoParams());
+
+    return result.fold(
+      (failure) {
+        state = state.copyWith(
+          status: AuthStatus.error,
+          errorMessage: failure.message,
+        );
+        return false;
+      },
+      (data) {
+        final (user, _) = data;
+        state = state.copyWith(
+          status: AuthStatus.authenticated,
+          user: user,
+          errorMessage: null,
+        );
+        return true;
+      },
+    );
+  }
+
   /// 로그아웃
   Future<void> logout() async {
     state = state.copyWith(status: AuthStatus.loading);
@@ -192,6 +227,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   return AuthNotifier(
     registerWithPhone: ref.watch(registerWithPhoneUseCaseProvider),
+    loginWithGoogle: ref.watch(loginWithGoogleUseCaseProvider),
     logout: ref.watch(logoutUseCaseProvider),
     getCurrentUser: ref.watch(getCurrentUserUseCaseProvider),
     tryAutoLogin: ref.watch(tryAutoLoginUseCaseProvider),

@@ -16,16 +16,17 @@ const (
 
 // Event represents an event/appointment in the system
 type Event struct {
-	ID          int64       `json:"id" db:"id"`
-	Title       string      `json:"title" db:"title"`
-	Description *string     `json:"description,omitempty" db:"description"`
-	StartTime   time.Time   `json:"start_time" db:"start_time"`
-	EndTime     time.Time   `json:"end_time" db:"end_time"`
-	Location    *string     `json:"location,omitempty" db:"location"`
-	CreatorID   int64       `json:"creator_id" db:"creator_id"`
-	Status      EventStatus `json:"status" db:"status"`
-	CreatedAt   time.Time   `json:"created_at" db:"created_at"`
-	UpdatedAt   time.Time   `json:"updated_at" db:"updated_at"`
+	ID               int64       `json:"id" db:"id"`
+	Title            string      `json:"title" db:"title"`
+	Description      *string     `json:"description,omitempty" db:"description"`
+	StartTime        time.Time   `json:"start_time" db:"start_time"`
+	EndTime          time.Time   `json:"end_time" db:"end_time"`
+	Location         *string     `json:"location,omitempty" db:"location"`
+	CreatorID        int64       `json:"creator_id" db:"creator_id"`
+	Status           EventStatus `json:"status" db:"status"`
+	GoogleCalendarID *string     `json:"google_calendar_id,omitempty" db:"google_calendar_id"` // Google Calendar 연동 ID
+	CreatedAt        time.Time   `json:"created_at" db:"created_at"`
+	UpdatedAt        time.Time   `json:"updated_at" db:"updated_at"`
 }
 
 // EventParticipant represents a participant in an event

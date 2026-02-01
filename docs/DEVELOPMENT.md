@@ -89,7 +89,45 @@ sudo apt install postgresql-client-15
 sudo apt install redis-tools
 ```
 
-#### Windows
+#### Windows (WSL 사용 - 권장)
+
+Windows에서는 **WSL2 + AlmaLinux**를 사용하여 Backend를 실행하고, **Windows에서 Flutter**를 개발하는 것을 권장합니다.
+
+```powershell
+# 1. WSL2 설치 (관리자 PowerShell)
+wsl --install
+
+# 2. AlmaLinux 설치 (Microsoft Store 또는)
+# https://github.com/almalinux/wsl-images 에서 다운로드
+
+# 3. Flutter 설치 (Windows)
+choco install flutter
+# 또는 https://flutter.dev/docs/get-started/install/windows
+
+# 4. Git 설치
+choco install git
+```
+
+**WSL 내부 설정:**
+```bash
+# WSL 접속
+wsl -d AlmaLinux-Kitten-10
+
+# Podman 설치
+sudo dnf install -y podman python3-pip
+pip3 install --user podman-compose
+
+# Go 1.25+ 설치
+cd /tmp
+curl -LO https://go.dev/dl/go1.25.5.linux-amd64.tar.gz
+sudo tar -C /usr/local -xzf go1.25.5.linux-amd64.tar.gz
+echo 'export PATH=$PATH:/usr/local/go/bin:~/.local/bin' >> ~/.bashrc
+source ~/.bashrc
+```
+
+> **참고**: WSL 환경 설정 상세 내용은 [troubleshooting/wsl.md](troubleshooting/wsl.md) 참조
+
+#### Windows (네이티브 - 비권장)
 ```powershell
 # Chocolatey 설치 (관리자 권한)
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
@@ -100,12 +138,14 @@ choco install golang
 # Flutter 설치
 choco install flutter
 
-# Podman 설치 (Windows용)
+# Podman 설치 (Windows용) - nftables 문제로 권장하지 않음
 choco install podman podman-compose
 
 # Git 설치
 choco install git
 ```
+
+> **주의**: Windows 네이티브 Podman은 nftables 오류 등 문제가 있어 WSL 사용을 권장합니다.
 
 ---
 
@@ -142,6 +182,8 @@ TWILIO_PHONE_NUMBER=+12345678901
 ```
 
 ### 3. Podman Compose로 서비스 실행
+
+#### Linux / macOS
 ```bash
 # 백그라운드로 모든 서비스 시작
 cd containers
@@ -149,7 +191,28 @@ podman-compose up -d
 
 # 로그 확인
 podman-compose logs -f
+```
 
+#### Windows (WSL)
+```bash
+# WSL 접속
+wsl -d AlmaLinux-Kitten-10
+
+# 자동화 스크립트 실행 (권장)
+bash /mnt/d/projects/timingle2/containers/setup_podman.sh
+
+# 또는 수동 실행
+cd ~/projects/timingle2/containers
+~/.local/bin/podman-compose -f podman-compose-wsl.yml up -d
+```
+
+> **WSL 주의사항**:
+> - WSL에서는 `podman-compose-wsl.yml` 사용 (network_mode: host)
+> - ScyllaDB keyspace 수동 생성 필요
+> - 상세 내용: [troubleshooting/wsl.md](troubleshooting/wsl.md)
+
+#### 로그 확인
+```bash
 # 특정 서비스 로그만 보기
 podman-compose logs -f postgres
 podman-compose logs -f redis

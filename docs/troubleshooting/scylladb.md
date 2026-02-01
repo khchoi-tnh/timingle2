@@ -316,4 +316,58 @@ scylla:
 
 ---
 
-**마지막 업데이트**: 2025-12-31
+## ❌ 문제 6: WSL에서 ScyllaDB가 127.0.1.1에 바인딩됨
+
+### 증상
+```bash
+ss -tlnp | grep 9042
+# 출력: LISTEN 127.0.1.1:9042 (127.0.0.1:9042가 아님!)
+
+# 애플리케이션 연결 실패
+gocql: unable to dial control conn 127.0.0.1:9042: connection refused
+```
+
+### 원인
+- ScyllaDB가 호스트명 기반으로 IP 자동 감지
+- WSL 환경의 `/etc/hosts`에서 127.0.1.1 사용
+
+### 해결 방법
+
+명시적 주소 설정:
+```yaml
+scylla:
+  command: >
+    --smp 1 --memory 1G --overprovisioned 1 --developer-mode 1
+    --api-address 0.0.0.0
+    --listen-address 0.0.0.0
+    --rpc-address 0.0.0.0
+    --broadcast-address 127.0.0.1
+    --broadcast-rpc-address 127.0.0.1
+```
+
+자세한 내용: [WSL 문제 해결](./wsl.md) 참조
+
+---
+
+## ❌ 문제 7: Keyspace 없음 오류
+
+### 증상
+```
+error: Keyspace 'timingle' does not exist
+Failed to connect to ScyllaDB: no connections were made when creating the session
+```
+
+### 원인
+- ScyllaDB 첫 실행 시 keyspace 자동 생성 안됨
+
+### 해결 방법
+```bash
+podman exec timingle-scylla cqlsh -e "
+  CREATE KEYSPACE IF NOT EXISTS timingle
+  WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
+"
+```
+
+---
+
+**마지막 업데이트**: 2026-01-07

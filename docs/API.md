@@ -139,38 +139,52 @@ POST /auth/phone/verify
 }
 ```
 
-### 3. Google OAuth 로그인
+### 3. Google OAuth 로그인 (Mobile - ID Token 방식)
 ```http
-GET /auth/google
+POST /auth/google
 ```
 
-리다이렉트 → Google 로그인 페이지
+Flutter에서 `google_sign_in` 패키지로 얻은 ID Token을 전송합니다.
 
-### 4. Google OAuth 콜백
-```http
-GET /auth/google/callback?code={auth_code}
+**Request Body**:
+```json
+{
+  "id_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6..."
+}
 ```
 
 **Response** (200 OK):
 ```json
 {
-  "success": true,
-  "data": {
-    "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "refresh_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "expires_in": 900,
-    "user": {
-      "id": 1,
-      "email": "user@example.com",
-      "name": "John Doe",
-      "profile_image_url": "https://...",
-      "role": "USER"
-    }
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh_token": "random-refresh-token-string",
+  "expires_in": 900,
+  "user": {
+    "id": 1,
+    "phone": "oauth_1704067200000000000",
+    "email": "user@example.com",
+    "name": "John Doe",
+    "profile_image_url": "https://lh3.googleusercontent.com/...",
+    "role": "USER",
+    "created_at": "2025-01-01T10:00:00Z",
+    "updated_at": "2025-01-01T10:00:00Z"
   }
 }
 ```
 
-### 5. 토큰 갱신
+**동작 방식**:
+1. Google ID Token 검증 (Google의 공개 키로 서명 확인)
+2. 기존 OAuth 계정 존재 확인 → 있으면 로그인
+3. 없으면 이메일로 기존 사용자 확인
+4. 새 사용자면 자동 회원가입
+5. OAuth 계정 연동 정보 저장
+6. JWT 토큰 발급
+
+**에러 응답**:
+- `401 Unauthorized`: 잘못된 ID Token
+- `400 Bad Request`: id_token 필드 누락
+
+### 4. 토큰 갱신
 ```http
 POST /auth/refresh
 ```

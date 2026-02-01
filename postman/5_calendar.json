@@ -1,0 +1,47 @@
+{
+  "info": {
+    "name": "5. Calendar (캘린더)",
+    "description": "Google Calendar 연동 API\n\n⚠️ Google OAuth Calendar 권한 필요\n\n### 포함 기능\n- 5-1. 연동 상태 확인\n- 5-2. 캘린더 이벤트 조회\n- 5-3. 이벤트 동기화",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "5-1. Get Calendar Status (연동 상태)",
+      "request": {
+        "method": "GET",
+        "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+        "url": {"raw": "{{base_url}}/calendar/status", "host": ["{{base_url}}"], "path": ["calendar", "status"]},
+        "description": "Google Calendar 연동 상태를 확인합니다."
+      },
+      "event": [{"listen": "test", "script": {"exec": ["pm.test(\"Status 200\", () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+    },
+    {
+      "name": "5-2. Get Calendar Events (이벤트 조회)",
+      "request": {
+        "method": "GET",
+        "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+        "url": {
+          "raw": "{{base_url}}/calendar/events?start=2024-01-01T00:00:00Z&end=2024-12-31T23:59:59Z",
+          "host": ["{{base_url}}"],
+          "path": ["calendar", "events"],
+          "query": [
+            {"key": "start", "value": "2024-01-01T00:00:00Z"},
+            {"key": "end", "value": "2024-12-31T23:59:59Z"}
+          ]
+        },
+        "description": "Google Calendar 이벤트를 조회합니다."
+      },
+      "event": [{"listen": "test", "script": {"exec": ["pm.test(\"Status 200\", () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+    },
+    {
+      "name": "5-3. Sync Event to Calendar (동기화)",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+        "url": {"raw": "{{base_url}}/calendar/sync/{{event_id}}", "host": ["{{base_url}}"], "path": ["calendar", "sync", "{{event_id}}"]},
+        "description": "timingle 이벤트를 Google Calendar에 동기화합니다."
+      },
+      "event": [{"listen": "test", "script": {"exec": ["pm.test(\"Status 200\", () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+    }
+  ]
+}

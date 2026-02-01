@@ -1,15 +1,25 @@
+import 'dart:io';
+
 /// API 관련 상수
 class ApiConstants {
   ApiConstants._();
 
-  // Base URLs
-  static const String baseUrl = 'http://localhost:8080';
+  // Base URLs - Android Emulator uses 10.0.2.2 to access host machine
+  static String get _host {
+    // Android Emulator: 10.0.2.2, iOS Simulator/Real device: localhost
+    if (Platform.isAndroid) {
+      return '10.0.2.2';
+    }
+    return 'localhost';
+  }
+
+  static String get baseUrl => 'http://$_host:8080';
   static const String apiVersion = '/api/v1';
-  static const String apiBaseUrl = '$baseUrl$apiVersion';
+  static String get apiBaseUrl => '$baseUrl$apiVersion';
 
   // WebSocket
-  static const String wsBaseUrl = 'ws://localhost:8080';
-  static const String wsEndpoint = '$wsBaseUrl$apiVersion/ws';
+  static String get wsBaseUrl => 'ws://$_host:8080';
+  static String get wsEndpoint => '$wsBaseUrl$apiVersion/ws';
 
   // Timeout (milliseconds)
   static const int connectTimeout = 30000;
@@ -21,6 +31,13 @@ class ApiConstants {
   static const String authLogin = '/auth/login';
   static const String authRefresh = '/auth/refresh';
   static const String authLogout = '/auth/logout';
+  static const String authGoogle = '/auth/google';
+  static const String authGoogleCalendar = '/auth/google/calendar';
+
+  // Calendar Endpoints
+  static const String calendarStatus = '/calendar/status';
+  static const String calendarEvents = '/calendar/events';
+  static String calendarSync(int eventId) => '/calendar/sync/$eventId';
 
   // User Endpoints
   static const String usersMe = '/users/me';

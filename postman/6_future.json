@@ -1,0 +1,100 @@
+{
+  "info": {
+    "name": "6. Future (미구현)",
+    "description": "❌ 미구현 API - Backend 구현 후 테스트 가능\n\n### 포함 기능\n- 6-1. Friends (친구)\n- 6-2. Open Slots (오픈 예약)\n- 6-3. Payments (결제)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "6-1. Friends (친구) ❌",
+      "item": [
+        {
+          "name": "[ ] Get Friends (친구 목록)",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {"raw": "{{base_url}}/friends", "host": ["{{base_url}}"], "path": ["friends"]},
+            "description": "❌ **미구현**"
+          }
+        },
+        {
+          "name": "[ ] Add Friend (친구 추가)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{access_token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {"mode": "raw", "raw": "{\n  \"user_id\": 2\n}"},
+            "url": {"raw": "{{base_url}}/friends", "host": ["{{base_url}}"], "path": ["friends"]},
+            "description": "❌ **미구현**"
+          }
+        },
+        {
+          "name": "[ ] Delete Friend (친구 삭제)",
+          "request": {
+            "method": "DELETE",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {"raw": "{{base_url}}/friends/2", "host": ["{{base_url}}"], "path": ["friends", "2"]},
+            "description": "❌ **미구현**"
+          }
+        }
+      ]
+    },
+    {
+      "name": "6-2. Open Slots (오픈 예약) ❌",
+      "item": [
+        {
+          "name": "[ ] Get Open Slots (목록)",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/open-slots?region=서울",
+              "host": ["{{base_url}}"],
+              "path": ["open-slots"],
+              "query": [{"key": "region", "value": "서울"}]
+            },
+            "description": "❌ **미구현**"
+          }
+        },
+        {
+          "name": "[ ] Book Open Slot (예약)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {"raw": "{{base_url}}/open-slots/1/book", "host": ["{{base_url}}"], "path": ["open-slots", "1", "book"]},
+            "description": "❌ **미구현**"
+          }
+        }
+      ]
+    },
+    {
+      "name": "6-3. Payments (결제) ❌",
+      "item": [
+        {
+          "name": "[ ] Create Payment (결제 생성)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{access_token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {"mode": "raw", "raw": "{\n  \"amount\": 10000,\n  \"method\": \"card\"\n}"},
+            "url": {"raw": "{{base_url}}/payments", "host": ["{{base_url}}"], "path": ["payments"]},
+            "description": "❌ **미구현**"
+          }
+        },
+        {
+          "name": "[ ] Get Payment (결제 조회)",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {"raw": "{{base_url}}/payments/1", "host": ["{{base_url}}"], "path": ["payments", "1"]},
+            "description": "❌ **미구현**"
+          }
+        }
+      ]
+    }
+  ]
+}

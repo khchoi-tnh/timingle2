@@ -3,6 +3,7 @@ package repositories
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/khchoi-tnh/timingle/internal/models"
 	"github.com/lib/pq"
@@ -206,4 +207,61 @@ func (r *UserRepository) FindByIDs(ids []int64) ([]*models.User, error) {
 	}
 
 	return users, nil
+}
+
+// FindByEmail finds a user by email address
+func (r *UserRepository) FindByEmail(email string) (*models.User, error) {
+	query := `
+		SELECT id, phone, name, email, profile_image_url, region, interests, timezone, language, role, created_at, updated_at
+		FROM users
+		WHERE email = $1
+	`
+
+	user := &models.User{}
+	err := r.db.QueryRow(query, email).Scan(
+		&user.ID,
+		&user.Phone,
+		&user.Name,
+		&user.Email,
+		&user.ProfileImageURL,
+		&user.Region,
+		pq.Array(&user.Interests),
+		&user.Timezone,
+		&user.Language,
+		&user.Role,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, nil // Return nil, nil to indicate "not found" without error
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to find user by email: %w", err)
+	}
+
+	return user, nil
+}
+
+// CreateOAuthUser creates a new user from OAuth provider data
+func (r *UserRepository) CreateOAuthUser(email, name, pictureURL string) (*models.User, error) {
+	// Generate a unique phone placeholder for OAuth users (they don't have phone numbers)
+	// Format: oauth_<timestamp> to ensure uniqueness
+	phonePlaceholder := fmt.Sprintf("oauth_%d", time.Now().UnixNano())
+
+	user := &models.User{
+		Phone:           phonePlaceholder,
+		Name:            &name,
+		Email:           &email,
+		ProfileImageURL: &pictureURL,
+		Timezone:        "UTC",
+		Language:        "ko",
+		Role:            models.UserRoleUser,
+	}
+
+	if err := r.Create(user); err != nil {
+		return nil, fmt.Errorf("failed to create OAuth user: %w", err)
+	}
+
+	return user, nil
 }

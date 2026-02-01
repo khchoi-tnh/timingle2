@@ -46,7 +46,7 @@ func (r *EventRepository) Create(event *models.Event) error {
 // FindByID finds an event by ID
 func (r *EventRepository) FindByID(id int64) (*models.Event, error) {
 	query := `
-		SELECT id, title, description, start_time, end_time, location, creator_id, status, created_at, updated_at
+		SELECT id, title, description, start_time, end_time, location, creator_id, status, google_calendar_id, created_at, updated_at
 		FROM events
 		WHERE id = $1
 	`
@@ -61,6 +61,7 @@ func (r *EventRepository) FindByID(id int64) (*models.Event, error) {
 		&event.Location,
 		&event.CreatorID,
 		&event.Status,
+		&event.GoogleCalendarID,
 		&event.CreatedAt,
 		&event.UpdatedAt,
 	)
@@ -325,4 +326,62 @@ func (r *EventRepository) IsUserParticipant(eventID, userID int64) (bool, error)
 	}
 
 	return exists, nil
+}
+
+// UpdateGoogleCalendarID updates the Google Calendar ID for an event
+func (r *EventRepository) UpdateGoogleCalendarID(eventID int64, calendarID string) error {
+	query := `
+		UPDATE events
+		SET google_calendar_id = $1, updated_at = NOW()
+		WHERE id = $2
+	`
+
+	result, err := r.db.Exec(query, calendarID, eventID)
+	if err != nil {
+		return fmt.Errorf("failed to update Google Calendar ID: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("event not found")
+	}
+
+	return nil
+}
+
+// FindByGoogleCalendarID finds an event by Google Calendar ID
+func (r *EventRepository) FindByGoogleCalendarID(calendarID string) (*models.Event, error) {
+	query := `
+		SELECT id, title, description, start_time, end_time, location, creator_id, status, google_calendar_id, created_at, updated_at
+		FROM events
+		WHERE google_calendar_id = $1
+	`
+
+	event := &models.Event{}
+	err := r.db.QueryRow(query, calendarID).Scan(
+		&event.ID,
+		&event.Title,
+		&event.Description,
+		&event.StartTime,
+		&event.EndTime,
+		&event.Location,
+		&event.CreatorID,
+		&event.Status,
+		&event.GoogleCalendarID,
+		&event.CreatedAt,
+		&event.UpdatedAt,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, nil // Not found
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to find event by Google Calendar ID: %w", err)
+	}
+
+	return event, nil
 }

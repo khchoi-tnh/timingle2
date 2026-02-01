@@ -12,6 +12,9 @@ abstract class AuthRepository {
     required String name,
   });
 
+  /// Google 로그인
+  Future<Either<Failure, (User, AuthTokens)>> loginWithGoogle();
+
   /// 토큰 갱신
   Future<Either<Failure, String>> refreshToken(String refreshToken);
 
