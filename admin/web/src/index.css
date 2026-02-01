@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+/* Timingle Admin Theme */
+@theme {
+  /* Primary Colors */
+  --color-primary: #2E4A8F;
+  --color-primary-light: #5EC4E8;
+  --color-primary-dark: #1E3A6F;
+
+  /* Accent */
+  --color-accent: #3B82F6;
+
+  /* Status Colors */
+  --color-success: #22C55E;
+  --color-warning: #FBBF24;
+  --color-error: #EF4444;
+  --color-info: #3B82F6;
+
+  /* Background */
+  --color-background: #F9FAFB;
+  --color-surface: #FFFFFF;
+  --color-surface-hover: #F3F4F6;
+
+  /* Text */
+  --color-text-primary: #111827;
+  --color-text-secondary: #6B7280;
+  --color-text-muted: #9CA3AF;
+
+  /* Border */
+  --color-border: #E5E7EB;
+  --color-border-dark: #D1D5DB;
+
+  /* Sidebar */
+  --color-sidebar: #1F2937;
+  --color-sidebar-hover: #374151;
+  --color-sidebar-active: #3B82F6;
+}
+
+/* Base Styles */
+html {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-dark);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
