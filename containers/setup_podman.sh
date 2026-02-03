@@ -17,8 +17,10 @@ podman rm -af 2>/dev/null || true
 
 # WSL용 compose 파일로 컨테이너 시작
 echo "2. 컨테이너 시작 (network_mode: host)..."
-cd /root/projects/timingle2/containers
-/root/.local/bin/podman-compose -f podman-compose-wsl.yml up -d
+#cd /root/projects/timingle2/containers
+#/root/.local/bin/podman-compose -f podman-compose-wsl.yml up -d
+#/root/.local/bin/podman-compose -f podman-compose-wsl.yml up -d
+podman-compose -f podman-compose.yml up -d
 
 # 상태 확인
 echo "3. 컨테이너 상태 확인..."

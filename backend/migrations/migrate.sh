@@ -2,6 +2,15 @@
 
 set -e
 
+# Load .env file if it exists
+if [ -f "$(dirname "$0")/../.env" ]; then
+  echo "📄 Loading environment from .env file..."
+  set -a  # automatically export all variables
+  source "$(dirname "$0")/../.env"
+  set +a  # disable auto-export
+fi
+
+# Set defaults if not provided
 POSTGRES_HOST="${POSTGRES_HOST:-localhost}"
 POSTGRES_PORT="${POSTGRES_PORT:-5432}"
 POSTGRES_USER="${POSTGRES_USER:-timingle}"

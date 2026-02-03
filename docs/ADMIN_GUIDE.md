@@ -68,7 +68,59 @@ timingle-nats        Up 10 minutes   0.0.0.0:4222->4222/tcp
 timingle-scylla      Up 10 minutes   0.0.0.0:9042->9042/tcp
 ```
 
-### Step 2: Admin Backend 실행 (Windows Terminal 1)
+### Step 2: DB 스키마 동기화 및 초기 데이터 생성
+
+**⚠️ 최초 실행 시 필수!** DB 스키마를 동기화하고 Admin 계정을 생성합니다.
+
+#### 2-1. DB 스키마 동기화 (Windows Terminal)
+
+```bash
+# 프로젝트 디렉토리 이동
+cd D:\projects\timingle2\admin
+
+# Drizzle로 스키마 푸시
+bun run db:push
+```
+
+**예상 결과:**
+```
+Pulling schema from database...
+Applying changes...
+✓ users table created/updated
+✓ events table created/updated
+✓ event_participants table created/updated
+✓ audit_logs table created/updated
+✓ messages table created/updated
+Schema synchronized
+```
+
+#### 2-2. 초기 Admin 계정 생성 (WSL)
+
+```bash
+# WSL 접속
+wsl -d AlmaLinux-Kitten-10
+
+# Admin 사용자 생성
+podman exec -it timingle-postgres psql -U timingle -d timingle -c "
+INSERT INTO users (phone, name, role, status)
+VALUES ('01012345678', 'Super Admin', 'SUPER_ADMIN', 'ACTIVE')
+ON CONFLICT (phone) DO NOTHING;
+"
+
+# 생성 확인
+podman exec -it timingle-postgres psql -U timingle -d timingle -c "
+SELECT id, phone, name, role, status FROM users WHERE role IN ('ADMIN', 'SUPER_ADMIN');
+"
+```
+
+**예상 결과:**
+```
+ id |    phone     |    name     |    role     | status
+----+--------------+-------------+-------------+--------
+  1 | 01012345678  | Super Admin | SUPER_ADMIN | ACTIVE
+```
+
+### Step 3: Admin Backend 실행 (Windows Terminal 1)
 
 ```bash
 # 프로젝트 디렉토리 이동
@@ -89,7 +141,7 @@ bun run dev
 🦊 Hono server running at http://localhost:3000
 ```
 
-### Step 3: Admin Frontend 실행 (Windows Terminal 2)
+### Step 4: Admin Frontend 실행 (Windows Terminal 2)
 
 ```bash
 # 프로젝트 디렉토리 이동
@@ -110,33 +162,10 @@ bun run dev
   ➜  Network: use --host to expose
 ```
 
-### Step 4: 브라우저에서 접속
+### Step 5: 브라우저에서 접속 및 로그인
 
 ```
 http://localhost:5173
-```
-
-### Step 5: 초기 Admin 계정 생성 및 로그인
-
-**최초 실행 시 DB에 Admin 사용자를 생성해야 합니다.**
-
-#### 방법 1: WSL에서 SQL 직접 실행
-
-```bash
-# WSL 접속
-wsl -d AlmaLinux-Kitten-10
-
-# Admin 사용자 생성
-podman exec -it timingle-postgres psql -U timingle -d timingle -c "
-INSERT INTO users (phone, name, role, status)
-VALUES ('01012345678', 'Super Admin', 'SUPER_ADMIN', 'ACTIVE')
-ON CONFLICT (phone) DO NOTHING;
-"
-
-# 생성 확인
-podman exec -it timingle-postgres psql -U timingle -d timingle -c "
-SELECT id, phone, name, role FROM users WHERE role IN ('ADMIN', 'SUPER_ADMIN');
-"
 ```
 
 #### 로그인 정보
@@ -211,15 +240,23 @@ CORS_ORIGIN=http://localhost:5173
 ## 빠른 시작 (한 줄 요약)
 
 ```bash
-# Terminal 1 (WSL)
-wsl -d Rocky-9 -e bash -c "cd /mnt/d/projects/timingle2/containers && podman-compose up -d"
+# Terminal 1 (WSL) - 컨테이너 시작
+wsl -d AlmaLinux-Kitten-10 -e bash -c "cd /mnt/d/projects/timingle2/containers && podman-compose up -d"
 
-# Terminal 2 (Windows)
+# Terminal 2 (Windows) - DB 마이그레이션 (최초 1회)
+cd D:\projects\timingle2\admin && bun run db:push
+
+# Terminal 2 (Windows) - Admin 계정 생성 (최초 1회, WSL에서 실행)
+wsl -d AlmaLinux-Kitten-10 -e podman exec -i timingle-postgres psql -U timingle -d timingle -c "INSERT INTO users (phone, name, role, status) VALUES ('01012345678', 'Super Admin', 'SUPER_ADMIN', 'ACTIVE') ON CONFLICT (phone) DO NOTHING;"
+
+# Terminal 2 (Windows) - Backend 실행
 cd D:\projects\timingle2\admin && bun run dev
 
-# Terminal 3 (Windows)
+# Terminal 3 (Windows) - Frontend 실행
 cd D:\projects\timingle2\admin\web && bun run dev
 ```
+
+**로그인:** http://localhost:5173 (전화번호: `01012345678`, 비밀번호: `admin123`)
 
 ---
 
@@ -310,4 +347,4 @@ tcp  0  0 0.0.0.0:5173  0.0.0.0:*  LISTEN  # ← 모든 인터페이스에 바�
 
 ---
 
-마지막 업데이트: 2026-02-01 (로그인 정보 및 외부 접속 설정 추가)
+마지막 업데이트: 2026-02-01 (DB 마이그레이션 단계 추가, 로그인 정보 및 외부 접속 설정)
