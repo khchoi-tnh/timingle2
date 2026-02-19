@@ -15,6 +15,7 @@
 | [calendar.md](calendar.md) | Calendar 연동 | Google Calendar API 동기화 |
 | [invites.md](invites.md) | 초대 시스템 | 초대 링크, 참가 수락/거절 |
 | [database.md](database.md) | DB 스키마 | PostgreSQL + ScyllaDB 전체 테이블 구조, 인덱스, 마이그레이션 |
+| [scalability.md](scalability.md) | 확장성 전략 | 50명→1억 단계별 아키텍처 확장 로드맵, 병목 예측, 비용 추정 |
 
 ---
 
