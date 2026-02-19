@@ -396,6 +396,8 @@ PRIMARY KEY ((event_id, bucket), created_at, message_id)
 
 - [채팅 시스템](chat.md) - WebSocket Hub, NATS (확장 대상)
 - [DB 스키마](database.md) - PostgreSQL + ScyllaDB (샤딩 대상)
+- [분산 SQL 심층 분석](distributed-sql.md) - PostgreSQL → CockroachDB/TiDB 상세 비교
+- [메시지 큐 심층 분석](message-queue.md) - NATS → Kafka/Pulsar 상세 비교
 - [전체 인덱스](README.md)
 
 ---
